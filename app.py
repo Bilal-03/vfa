@@ -840,11 +840,5 @@ I can help you with:<br><br>
         traceback.print_exc()
         return error_msg
 
-if __name__ == '__main__':
-    print("=" * 50)
-    print("🚀 Virtual Finance Assistant Starting...")
-    print("=" * 50)
-    print("🌐 Enhanced UI: http://localhost:4040")
-    print("🛑 Press CTRL+C to stop")
-    print("=" * 50)
-    app.run(port=4040, debug=True)
+if __name__ == "__main__":
+    app.run(debug=False)
