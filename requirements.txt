@@ -7,3 +7,4 @@ SpeechRecognition
 pyttsx3
 beautifulsoup4
 lxml
+gunicorn
