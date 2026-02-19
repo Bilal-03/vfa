@@ -6,7 +6,6 @@
 
 ## 📸 Demo
 
-> _Add screenshots below by replacing the placeholder paths with your actual image files after uploading them to the repo._
 
 ### 🏠 Home Dashboard
 <!-- Replace with your screenshot -->
