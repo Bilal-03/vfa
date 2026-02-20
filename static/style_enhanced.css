@@ -1059,19 +1059,162 @@ select.form-control option {
 .custom-dropdown::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 .custom-dropdown::-webkit-scrollbar-thumb:hover { background: var(--muted-light); }
 
-/* ── RESPONSIVE ───────────────────────────────────────────────────────── */
-@media (max-width: 1200px) {
+/* ══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE — TABLET & MOBILE
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Tablet (≤ 1024px) ───────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
   .features-grid { grid-template-columns: repeat(2, 1fr); }
-  .feature-card-wide { grid-column: span 2; }
   .chat-feature-card { grid-column: span 2; grid-row: auto; }
+  .market-widgets-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ── Mobile (≤ 768px) ────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .home-page { padding: 30px 24px; }
-  .features-grid { grid-template-columns: 1fr; }
-  .feature-card-wide { grid-column: span 1; }
-  .chat-feature-card { grid-column: span 1; grid-row: auto; }
-  .home-hero { text-align: center; }
-  .home-hero h1 { font-size: 1.6rem; }
+
+  /* Layout: stack sidebar off-screen, full-width content */
+  .row {
+    flex-wrap: nowrap !important;
+    position: relative;
+  }
+
+  .col-md-3.menu-sidebar {
+    position: fixed !important;
+    left: -280px !important;
+    top: 0;
+    height: 100vh !important;
+    width: 260px !important;
+    z-index: 1000;
+    transition: left 0.3s ease;
+    box-shadow: none;
+  }
+
+  .col-md-3.menu-sidebar.mobile-open {
+    left: 0 !important;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.2);
+  }
+
+  /* Overlay behind open sidebar */
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 999;
+  }
+  .sidebar-overlay.active { display: block; }
+
+  /* Main content takes full width */
+  .col-md-9.main-content {
+    flex: 1 1 100% !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* Mobile top bar with hamburger */
+  .mobile-topbar {
+    display: flex !important;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    background: #fff;
+    border-bottom: 1px solid #e2e8f0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .mobile-hamburger {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: #1e293b;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 8px;
+    line-height: 1;
+  }
+  .mobile-hamburger:hover { background: #f1f5f9; }
+
+  .mobile-topbar-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #1e293b;
+  }
+
+  /* Card header — hide on mobile (replaced by topbar) */
+  .card-header { display: none; }
+
+  /* Home page */
+  .home-page { padding: 20px 16px; }
+  .home-hero { text-align: center; padding: 20px 0 16px; }
+  .home-hero h1 { font-size: 1.5rem; }
+  .home-hero p  { font-size: 0.88rem; }
+
+  /* Feature cards — single column */
+  .features-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+  .chat-feature-card { grid-column: 1 !important; grid-row: auto !important; }
+
+  /* Compact feature cards on mobile */
+  .feature-card { padding: 14px 16px; flex-direction: row; align-items: center; gap: 14px; }
+  .feature-icon { width: 40px; height: 40px; font-size: 1rem; flex-shrink: 0; }
+  .feature-body h3 { font-size: 0.9rem; }
+  .feature-body p  { font-size: 0.78rem; display: none; } /* hide desc on mobile */
+  .feature-tags { display: none; }
+  .feature-arrow { margin-left: auto; flex-shrink: 0; }
+
+  /* Market widgets — 1 column on mobile */
+  .market-widgets-grid { grid-template-columns: 1fr !important; gap: 10px; }
+
+  /* Forms */
+  .input-form { padding: 20px 16px; }
+  .stepsip-summary { grid-template-columns: 1fr 1fr; }
+
+  /* Result cards */
+  #resultsContent { padding: 16px; }
+  .stepsip-table { font-size: 0.78rem; }
+  .stepsip-table th, .stepsip-table td { padding: 8px 6px; }
+
+  /* MF category bar — horizontal scroll */
+  .mf-cat-bar { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+  .mf-cat-btn { flex-shrink: 0; }
+
+  /* Glossary category pills */
+  .gloss-cats { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+  .gloss-cat-btn { flex-shrink: 0; }
+
+  /* News source chips */
+  .news-sources-bar { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+  .news-src-chip { flex-shrink: 0; }
+
+  /* SFC stock card */
+  .sfc-row-grid { grid-template-columns: 1fr 1fr; }
+  .sfc-big-price { font-size: 1.8rem; }
+
+  /* EMI/FD hero */
+  .emi-hero-value, .fd-hero-value { font-size: 1.8rem; }
+
+  /* Zakat nisab bar — stack vertically */
+  .zakat-nisab-bar { flex-direction: column; gap: 10px; }
+
+  /* Currency grid */
+  #currencyContent .currency-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Chat panel */
+  #messageArea { padding: 10px 12px; }
+  .msg_cotainer, .msg_cotainer_send { max-width: 90%; font-size: 0.88rem; }
+}
+
+/* ── Very small phones (≤ 380px) ─────────────────────────────────────────── */
+@media (max-width: 380px) {
+  .home-hero h1 { font-size: 1.3rem; }
+  .stepsip-summary { grid-template-columns: 1fr; }
+  .emi-hero-value, .fd-hero-value { font-size: 1.5rem; }
+  .zakat-hero-value { font-size: 1.8rem; }
 }
 /* ── Market News Panel ──────────────────────────────────────────────────── */
 #newsPanel {
