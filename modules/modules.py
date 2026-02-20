@@ -117,18 +117,42 @@ class Chatterbot:
     def _extract_loan_details(self, text):
         principal = annual_rate = years = None
 
-        # Principal — ₹ prefix
-        m = re.search(r"(?:₹\s*)(\d+(?:,\d{3})*(?:\.\d+)?)\b", text, re.IGNORECASE)
+        def parse_amount(raw_num, suffix=''):
+            try:
+                val = float(raw_num.replace(',', ''))
+            except Exception:
+                return None
+            s = (suffix or '').lower().strip()
+            if s in ('l', 'lac', 'lakh', 'lakhs', 'lacs'):
+                val *= 100_000
+            elif s == 'k':
+                val *= 1_000
+            elif s in ('cr', 'crore', 'crores'):
+                val *= 10_000_000
+            return val
+
+        # Pattern 1: ₹1L / ₹1 lakh / ₹5,00,000
+        m = re.search(
+            r'(?:₹\s*|rs\.?\s*|inr\s*)(\d+(?:[,\d]*)?(?:\.\d+)?)\s*(l|lac|lakh|lakhs|lacs|k|cr|crore|crores)?',
+            text, re.IGNORECASE)
         if m:
-            principal = float(m.group(1).replace(",", ""))
-        else:
-            # rs / rupee / rupees / INR suffix
+            principal = parse_amount(m.group(1), m.group(2) or '')
+
+        # Pattern 2: 1L / 1 lakh / 5cr (no prefix)
+        if principal is None:
             m = re.search(
-                r"(\d+(?:,\d{3})*(?:\.\d+)?)\s*(?:rs|rupee|rupees|INR)\b",
-                text, re.IGNORECASE
-            )
+                r'\b(\d+(?:\.\d+)?)\s*(l|lac|lakh|lakhs|lacs|k|cr|crore|crores)\b',
+                text, re.IGNORECASE)
             if m:
-                principal = float(m.group(1).replace(",", ""))
+                principal = parse_amount(m.group(1), m.group(2))
+
+        # Pattern 3: plain number followed by rs/rupee suffix
+        if principal is None:
+            m = re.search(
+                r'(\d+(?:[,\d]*)?(?:\.\d+)?)\s*(?:rs\.?|rupee|rupees|inr)\b',
+                text, re.IGNORECASE)
+            if m:
+                principal = parse_amount(m.group(1))
 
         # Interest rate
         m = re.search(r"(\d+(?:\.\d+)?)(?:%|\s*%|\s*percent)", text, re.IGNORECASE)
@@ -197,17 +221,48 @@ class FDCalculatorBot:
         principal = rate = days = None
         monthly_payout = False
 
-        # Principal — ₹ prefix
-        m = re.search(r"(?:₹\s*)(\d+(?:,\d{3})*(?:\.\d+)?)\b", text, re.IGNORECASE)
+        def parse_amount(raw_num, suffix=''):
+            try:
+                val = float(raw_num.replace(',', ''))
+            except Exception:
+                return None
+            s = (suffix or '').lower().strip()
+            if s in ('l', 'lac', 'lakh', 'lakhs', 'lacs'):
+                val *= 100_000
+            elif s == 'k':
+                val *= 1_000
+            elif s in ('cr', 'crore', 'crores'):
+                val *= 10_000_000
+            return val
+
+        # Pattern 1: ₹1L / ₹1 lakh / ₹1,00,000
+        m = re.search(
+            r'(?:₹\s*|rs\.?\s*|inr\s*)(\d+(?:[,\d]*)?(?:\.\d+)?)\s*(l|lac|lakh|lakhs|lacs|k|cr|crore|crores)?',
+            text, re.IGNORECASE)
         if m:
-            principal = float(m.group(1).replace(",", ""))
-        else:
+            principal = parse_amount(m.group(1), m.group(2) or '')
+
+        # Pattern 2: 1L / 1 lakh (no prefix)
+        if principal is None:
             m = re.search(
-                r"(\d+(?:,\d{3})*(?:\.\d+)?)\s*(?:rs|rupee|rupees|INR)\b",
-                text, re.IGNORECASE
-            )
+                r'\b(\d+(?:\.\d+)?)\s*(l|lac|lakh|lakhs|lacs|k|cr|crore|crores)\b',
+                text, re.IGNORECASE)
             if m:
-                principal = float(m.group(1).replace(",", ""))
+                principal = parse_amount(m.group(1), m.group(2))
+
+        # Pattern 3: plain number followed by rs/rupee suffix
+        if principal is None:
+            m = re.search(
+                r'(\d+(?:[,\d]*)?(?:\.\d+)?)\s*(?:rs\.?|rupee|rupees|inr)\b',
+                text, re.IGNORECASE)
+            if m:
+                principal = parse_amount(m.group(1))
+
+        # Pattern 4: plain large number fallback (≥4 digits)
+        if principal is None:
+            m = re.search(r'\b(\d{4,}(?:[,\d]*)?)\b', text)
+            if m:
+                principal = parse_amount(m.group(1))
 
         # Interest rate
         m = re.search(r"(\d+(?:\.\d+)?)(?:%|\s*%|\s*percent)", text, re.IGNORECASE)
