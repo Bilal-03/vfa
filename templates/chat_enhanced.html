@@ -646,145 +646,7 @@
 @keyframes ticker-scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 .t-spin{animation:t-sp .6s linear} @keyframes t-sp{100%{transform:rotate(360deg)}}
 
-/* ── MF Investment Growth Simulator ─────────────────────────────────────── */
-.mf-growth-section {
-    margin-top: 28px;
-    background: linear-gradient(160deg, #f0f9ff 0%, #f8fafc 60%, #f0fdf4 100%);
-    border: 1.5px solid #bfdbfe;
-    border-radius: 20px;
-    overflow: hidden;
-}
-.mf-growth-header {
-    display: flex; align-items: center; gap: 14px;
-    padding: 18px 22px 14px;
-    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 55%, #059669 100%);
-    border-bottom: none;
-}
-.mf-growth-header-icon {
-    width: 42px; height: 42px; border-radius: 12px;
-    background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.25);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.2rem; color: #fff; flex-shrink: 0;
-}
-.mf-growth-title {
-    font-size: .95rem; font-weight: 800; color: #fff; letter-spacing: -.2px;
-}
-.mf-growth-sub {
-    font-size: .76rem; color: rgba(255,255,255,.72); margin-top: 2px;
-}
-.mf-growth-input-row {
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    padding: 16px 22px 14px;
-    border-bottom: 1px solid #e2e8f0;
-    background: rgba(255,255,255,.7);
-}
-.mf-growth-input-label {
-    font-size: .82rem; font-weight: 700; color: #334155; white-space: nowrap;
-}
-.mf-growth-input-wrap {
-    position: relative; display: flex; align-items: center;
-}
-.mf-growth-rupee {
-    position: absolute; left: 12px;
-    font-size: .95rem; font-weight: 800; color: #2563eb; pointer-events: none;
-}
-.mf-growth-input {
-    padding: 9px 14px 9px 28px;
-    border: 2px solid #bfdbfe; border-radius: 10px;
-    font-size: .9rem; font-weight: 700; color: #1e293b;
-    background: #fff; outline: none; width: 160px;
-    font-family: 'JetBrains Mono', monospace;
-    transition: border-color .2s, box-shadow .2s;
-}
-.mf-growth-input:focus {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37,99,235,.12);
-}
-.mf-growth-cards {
-    display: flex; flex-direction: column; gap: 0;
-    padding: 0;
-}
-@keyframes gcIn {
-    from { opacity:0; transform:translateY(10px); }
-    to   { opacity:1; transform:none; }
-}
-.mf-growth-card {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    grid-template-rows: auto 6px;
-    align-items: center;
-    gap: 0 16px;
-    padding: 16px 22px 0;
-    border-bottom: 1px solid #f1f5f9;
-    background: #fff;
-    animation: gcIn .3s ease both;
-    transition: background .15s;
-    cursor: default;
-}
-.mf-growth-card:last-child { border-bottom: none; }
-.mf-growth-card:hover { background: #f8faff; }
-.mf-gc-left {
-    display: flex; align-items: center; gap: 12px; padding-bottom: 14px;
-}
-.mf-gc-icon {
-    width: 38px; height: 38px; border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: .95rem; flex-shrink: 0;
-}
-.mf-gc-period {
-    font-size: .82rem; font-weight: 800; color: #1e293b; letter-spacing: .1px;
-}
-.mf-gc-invested {
-    font-size: .74rem; color: #94a3b8; margin-top: 2px; font-weight: 500;
-}
-.mf-gc-right {
-    text-align: right; padding-bottom: 14px;
-}
-.mf-gc-grown {
-    font-size: 1.08rem; font-weight: 800;
-    font-family: 'JetBrains Mono', monospace;
-    color: #0f172a; letter-spacing: -.5px;
-}
-.mf-gc-gain {
-    font-size: .78rem; font-weight: 700; margin-top: 3px;
-    display: flex; align-items: center; gap: 5px; justify-content: flex-end;
-}
-.mf-gc-pct {
-    display: inline-block;
-    padding: 1px 7px; border-radius: 20px;
-    font-size: .72rem; font-weight: 800; letter-spacing: .1px;
-}
-.mf-gc-bar-track {
-    grid-column: 1 / -1;
-    height: 4px; background: #f1f5f9; border-radius: 0;
-    overflow: hidden; margin: 0 -22px;
-}
-.mf-gc-bar-fill {
-    height: 100%; border-radius: 0;
-    transition: width 1s cubic-bezier(.34,1.56,.64,1);
-    opacity: .7;
-}
-.mf-growth-disclaimer {
-    font-size: .73rem; color: #94a3b8; padding: 10px 22px 14px;
-    background: #f8fafc; border-top: 1px solid #f1f5f9;
-    display: flex; align-items: center; gap: 7px; line-height: 1.5;
-}
-.mf-growth-empty {
-    text-align: center; color: #94a3b8;
-    font-size: .82rem; padding: 20px;
-}
-
-/* ── Chat Format Hint Groups ──────────────────────────────────────────────── */
-.chat-format-group {
-    background: #fff; border: 1.5px solid #e2e8f0; border-radius: 14px;
-    padding: 12px 16px; margin-bottom: 10px;
-}
-.chat-format-label {
-    font-size: .78rem; font-weight: 800; color: #334155;
-    text-transform: uppercase; letter-spacing: .5px;
-    margin-bottom: 8px; display: flex; align-items: center; gap: 7px;
-}
-.chat-format-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+/* CSS fix: 3-column grid: col1, col2, col3(chat span 2 rows) */
 .features-grid {
     display:grid;
     grid-template-columns: 1fr 1fr 1fr;
@@ -805,6 +667,103 @@
 }
 .dropdown-item .d-name { font-size: 13px; font-weight: 500; color: #1e293b; }
 .dropdown-item .d-code { font-size: 11px; color: #2563eb; font-weight: 600; margin-left: 6px; }
+
+/* ── MF Investment Growth Simulator ─────────────────────────────────────── */
+.mf-growth-section {
+    margin-top: 24px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 18px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 4px 20px rgba(15,23,42,.06);
+}
+.mf-growth-header {
+    display: flex; align-items: center; gap: 14px;
+    padding: 18px 22px;
+    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #059669 100%);
+}
+.mf-growth-hicon {
+    width: 40px; height: 40px; border-radius: 12px;
+    background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.15rem; color: #fff; flex-shrink: 0;
+}
+.mf-growth-title { font-size: .95rem; font-weight: 800; color: #fff; }
+.mf-growth-sub   { font-size: .75rem; color: rgba(255,255,255,.72); margin-top: 2px; }
+.mf-growth-input-row {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 14px 22px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+.mf-growth-lbl {
+    font-size: .82rem; font-weight: 700; color: #334155; white-space: nowrap;
+}
+.mf-growth-input-wrap { position: relative; display: flex; align-items: center; }
+.mf-growth-rupee {
+    position: absolute; left: 11px;
+    font-size: .92rem; font-weight: 800; color: #2563eb; pointer-events: none;
+}
+.mf-growth-input {
+    padding: 8px 14px 8px 26px;
+    border: 2px solid #bfdbfe; border-radius: 10px;
+    font-size: .9rem; font-weight: 700; color: #1e293b;
+    font-family: 'JetBrains Mono', monospace;
+    background: #fff; outline: none; width: 150px;
+    transition: border-color .2s, box-shadow .2s;
+}
+.mf-growth-input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+.mf-growth-cards { display: flex; flex-direction: column; }
+@keyframes gcIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+.mf-gc {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 22px;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fff;
+    animation: gcIn .28s ease both;
+    transition: background .15s;
+}
+.mf-gc:last-child { border-bottom: none; }
+.mf-gc:hover { background: #fafbff; }
+.mf-gc-left { display: flex; align-items: center; gap: 12px; }
+.mf-gc-icon {
+    width: 40px; height: 40px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; flex-shrink: 0;
+}
+.mf-gc-period   { font-size: .88rem; font-weight: 800; color: #1e293b; }
+.mf-gc-invested { font-size: .74rem; color: #94a3b8; margin-top: 2px; font-weight: 500; }
+.mf-gc-mid {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    opacity: .85;
+}
+.mf-gc-arrow { font-size: 1.3rem; font-weight: 700; line-height: 1; }
+.mf-gc-mult  { font-size: .72rem; font-weight: 800; letter-spacing: .3px; }
+.mf-gc-right { text-align: right; }
+.mf-gc-grown {
+    font-size: 1.12rem; font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    color: #0f172a; letter-spacing: -.5px;
+}
+.mf-gc-gain {
+    display: flex; align-items: center; gap: 6px; justify-content: flex-end;
+    margin-top: 4px;
+}
+.mf-gc-gain-amt { font-size: .8rem; font-weight: 700; }
+.mf-gc-badge {
+    font-size: .72rem; font-weight: 800;
+    padding: 2px 8px; border-radius: 20px;
+    letter-spacing: .1px;
+}
+.mf-growth-note {
+    font-size: .73rem; color: #94a3b8;
+    padding: 10px 22px;
+    background: #f8fafc; border-top: 1px solid #f1f5f9;
+    display: flex; align-items: center; gap: 7px;
+}
 </style>
 
 <script>
@@ -880,13 +839,6 @@ function fetchTopTurnover(){
 }
 function refreshMarketWidgets(){ fetchTopGainers();fetchTopLosers();fetchTopVolume();fetchTopTurnover(); }
 
-function fillChat(chipEl) {
-    const txt = $(chipEl).text().trim();
-    $('#text').val(txt).focus();
-    // Remove the empty state so it doesn't show again
-    $('#messageFormeight').find('.chat-empty-state').remove();
-}
-
 function showForm(formType){
     $('.input-form').hide();
     $('#formsContainer').hide();
@@ -912,41 +864,7 @@ function showForm(formType){
     if(formType==='chat'){
         $('#messageFormeight').css({display:'flex',flexDirection:'column'});
         $('#chatFooter').show(); // Only show footer in Chat Mode
-        // Show helpful format hints if chat is empty
-        if($('#messageFormeight').children().length === 0) {
-            $('#messageFormeight').html(`
-                <div class="chat-empty-state">
-                    <div class="chat-empty-icon"><i class="fas fa-comments"></i></div>
-                    <h3>Chat with your Finance Assistant</h3>
-                    <p>Ask me about EMI, FD, SIP calculations, stocks, or anything finance-related.</p>
-                    <div style="width:100%;max-width:580px;margin-top:10px;">
-                        <div class="chat-format-group">
-                            <div class="chat-format-label"><i class="fas fa-building" style="color:#2563eb;"></i> EMI Calculator</div>
-                            <div class="chat-format-chips">
-                                <span class="chat-suggestion-chip" onclick="fillChat(this)">Calculate EMI for ₹5L at 8.5% for 20 years</span>
-                                <span class="chat-suggestion-chip" onclick="fillChat(this)">EMI for 30 lakh at 9% for 15 years</span>
-                                <span class="chat-suggestion-chip" onclick="fillChat(this)">Calculate my loan ₹10,00,000 at 10% for 5 years</span>
-                            </div>
-                        </div>
-                        <div class="chat-format-group">
-                            <div class="chat-format-label"><i class="fas fa-piggy-bank" style="color:#059669;"></i> Fixed Deposit</div>
-                            <div class="chat-format-chips">
-                                <span class="chat-suggestion-chip" onclick="fillChat(this)">Calculate FD ₹1L at 7% for 2 years</span>
-                                <span class="chat-suggestion-chip" onclick="fillChat(this)">FD of 50000 rupees at 6.5% for 1 year</span>
-                                <span class="chat-suggestion-chip" onclick="fillChat(this)">Calculate fixed deposit 2 lakh at 7.5% for 3 years</span>
-                            </div>
-                        </div>
-                        <div class="chat-format-group">
-                            <div class="chat-format-label"><i class="fas fa-coins" style="color:#f59e0b;"></i> SIP Calculator</div>
-                            <div class="chat-format-chips">
-                                <span class="chat-suggestion-chip" onclick="fillChat(this)">Calculate SIP 5000 monthly for 10 years at 12%</span>
-                                <span class="chat-suggestion-chip" onclick="fillChat(this)">SIP of 2000 for 15 years at 14%</span>
-                                <span class="chat-suggestion-chip" onclick="fillChat(this)">Monthly investment 10000 for 20 years at 12%</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>`);
-        }
+        // ... (rest of chat logic) ...
     } else if(formType==='stock'){
         $('#formsContainer').show(); 
         $('#stockForm').show(); 
@@ -2095,43 +2013,44 @@ function loadMFDetail(code, name) {
     $.getJSON('/mf_detail/' + code)
         .done(function(d) {
             if (d.error) { $('#mfContent').html('<div class="mf-error">'+d.error+'</div>'); return; }
+
             function retBadge(val, label) {
                 if (val === null || val === undefined) return `<div class="mf-ret-box mf-ret-na"><div class="mf-ret-label">${label}</div><div class="mf-ret-val">N/A</div></div>`;
                 const up = val >= 0;
                 return `<div class="mf-ret-box ${up?'mf-ret-up':'mf-ret-down'}">
                     <div class="mf-ret-label">${label}</div>
-                    <div class="mf-ret-val">${up?'+':''}${val.toFixed(2)}%</div>
+                    <div class="mf-ret-val">${up?'+':''  }${val.toFixed(2)}%</div>
                 </div>`;
             }
 
-            // Build growth periods only where data exists
             const periods = [
-                { label: '1 Year',  ret: d.return_1y, icon: 'fa-calendar-day',   color: '#3b82f6', glow: 'rgba(59,130,246,.18)' },
-                { label: '3 Years', ret: d.return_3y, icon: 'fa-calendar-week',  color: '#8b5cf6', glow: 'rgba(139,92,246,.18)'  },
-                { label: '5 Years', ret: d.return_5y, icon: 'fa-calendar-alt',   color: '#059669', glow: 'rgba(5,150,105,.18)'   },
+                { label:'1 Year',  icon:'fa-calendar-day',  color:'#2563eb', bg:'#eff6ff', ret: d.return_1y },
+                { label:'3 Years', icon:'fa-calendar-week', color:'#7c3aed', bg:'#f5f3ff', ret: d.return_3y },
+                { label:'5 Years', icon:'fa-calendar-alt',  color:'#059669', bg:'#ecfdf5', ret: d.return_5y },
             ].filter(p => p.ret !== null && p.ret !== undefined);
 
             const growthSection = periods.length ? `
                 <div class="mf-growth-section">
                     <div class="mf-growth-header">
-                        <div class="mf-growth-header-icon"><i class="fas fa-seedling"></i></div>
+                        <div class="mf-growth-hicon"><i class="fas fa-seedling"></i></div>
                         <div>
                             <div class="mf-growth-title">Investment Growth Simulator</div>
-                            <div class="mf-growth-sub">See how a lump-sum investment would have grown based on past returns</div>
+                            <div class="mf-growth-sub">See how a lump-sum would have grown based on past returns</div>
                         </div>
                     </div>
                     <div class="mf-growth-input-row">
-                        <label class="mf-growth-input-label">If I had invested</label>
+                        <span class="mf-growth-lbl">If I had invested</span>
                         <div class="mf-growth-input-wrap">
                             <span class="mf-growth-rupee">₹</span>
                             <input type="number" id="mfGrowthAmt" class="mf-growth-input"
-                                   placeholder="10,000" value="10000" min="1"
-                                   oninput="renderMFGrowthCards(${JSON.stringify(periods).replace(/"/g,'&quot;')})">
+                                   value="10000" min="1"
+                                   oninput="renderMFGrowthCards(JSON.parse(this.dataset.periods))"
+                                   data-periods='${JSON.stringify(periods)}'>
                         </div>
-                        <span class="mf-growth-input-label" style="color:#64748b;">— here's what it would be worth</span>
+                        <span class="mf-growth-lbl" style="color:#94a3b8;">— here’s what it would be worth</span>
                     </div>
                     <div id="mfGrowthCards" class="mf-growth-cards"></div>
-                    <div class="mf-growth-disclaimer"><i class="fas fa-circle-info"></i> Past returns do not guarantee future performance. These figures use absolute return % from AMFI data.</div>
+                    <div class="mf-growth-note"><i class="fas fa-circle-info"></i> Past returns don’t guarantee future performance · Absolute % from AMFI</div>
                 </div>` : '';
 
             $('#mfContent').html(`
@@ -2143,7 +2062,6 @@ function loadMFDetail(code, name) {
                         <span class="mf-tag">${d.schemeType||''}</span>
                         <span class="mf-tag mf-tag-cat">${d.schemeCategory||''}</span>
                     </div>
-
                     <div class="mf-nav-box">
                         <div>
                             <div class="mf-nav-label">Latest NAV</div>
@@ -2151,20 +2069,16 @@ function loadMFDetail(code, name) {
                             <div class="mf-nav-date">as of ${d.navDate}</div>
                         </div>
                     </div>
-
                     <div class="mf-returns-title">Returns</div>
                     <div class="mf-returns-row">
                         ${retBadge(d.return_1y, '1 Year')}
                         ${retBadge(d.return_3y, '3 Years')}
                         ${retBadge(d.return_5y, '5 Years')}
                     </div>
-
                     ${growthSection}
-
                     <div class="fp-source-note" style="margin-top:14px;"><i class="fas fa-info-circle"></i> NAV data from AMFI via mfapi.in · Returns are absolute % change</div>
                 </div>`);
 
-            // Render growth cards with default ₹10,000
             if (periods.length) renderMFGrowthCards(periods);
         })
         .fail(function() { $('#mfContent').html('<div class="mf-error"><i class="fas fa-wifi"></i> Could not fetch fund details.</div>'); });
@@ -2172,40 +2086,40 @@ function loadMFDetail(code, name) {
 
 function renderMFGrowthCards(periods) {
     const amt = parseFloat($('#mfGrowthAmt').val()) || 0;
-    const fmt = v => '₹' + Math.round(v).toLocaleString('en-IN', {minimumFractionDigits: 0});
-
-    if (amt <= 0) {
-        $('#mfGrowthCards').html('<div class="mf-growth-empty">Enter an amount above to see your projected growth</div>');
-        return;
-    }
+    if (amt <= 0) { $('#mfGrowthCards').html('<div style="text-align:center;color:#94a3b8;padding:20px;font-size:.84rem;">Enter an amount to see projected growth</div>'); return; }
+    const fmtINR = v => '₹' + Math.round(v).toLocaleString('en-IN');
 
     const html = periods.map((p, i) => {
-        const grown  = amt * (1 + p.ret / 100);
-        const gain   = grown - amt;
-        const isPos  = gain >= 0;
-        const gainFmt = (isPos ? '+' : '−') + '₹' + Math.abs(Math.round(gain)).toLocaleString('en-IN');
-        const pctFmt  = (isPos ? '+' : '') + p.ret.toFixed(2) + '%';
-        const barW    = Math.min(Math.abs(p.ret) / 2, 100); // visual bar scale, max at 200%
-        return `
-        <div class="mf-growth-card" style="--gc:${p.color};--gg:${p.glow};animation-delay:${i*60}ms">
+        const grown = amt * (1 + p.ret / 100);
+        const gain  = grown - amt;
+        const isPos = gain >= 0;
+        const gainTxt = (isPos ? '+' : '−') + '₹' + Math.abs(Math.round(gain)).toLocaleString('en-IN');
+        const pctTxt  = (isPos ? '+' : '') + p.ret.toFixed(2) + '%';
+        const mult    = (grown / amt).toFixed(2) + '×';
+        return `<div class="mf-gc" style="animation-delay:${i*70}ms;">
             <div class="mf-gc-left">
-                <div class="mf-gc-icon" style="background:${p.glow};color:${p.color};"><i class="fas ${p.icon}"></i></div>
+                <div class="mf-gc-icon" style="background:${p.bg};color:${p.color};"><i class="fas ${p.icon}"></i></div>
                 <div>
                     <div class="mf-gc-period">${p.label}</div>
-                    <div class="mf-gc-invested">Invested ${fmt(amt)}</div>
+                    <div class="mf-gc-invested">${fmtINR(amt)} invested</div>
                 </div>
             </div>
-            <div class="mf-gc-right">
-                <div class="mf-gc-grown">${fmt(grown)}</div>
-                <div class="mf-gc-gain" style="color:${isPos?'#059669':'#dc2626'};">${gainFmt} <span class="mf-gc-pct" style="background:${isPos?'rgba(5,150,105,.1)':'rgba(220,38,38,.1)'};color:${isPos?'#059669':'#dc2626'};">${pctFmt}</span></div>
+            <div class="mf-gc-mid">
+                <div class="mf-gc-arrow" style="color:${p.color};">→</div>
+                <div class="mf-gc-mult" style="color:${p.color};">${mult}</div>
             </div>
-            <div class="mf-gc-bar-track"><div class="mf-gc-bar-fill" style="width:${barW}%;background:${p.color};"></div></div>
+            <div class="mf-gc-right">
+                <div class="mf-gc-grown">${fmtINR(grown)}</div>
+                <div class="mf-gc-gain">
+                    <span class="mf-gc-gain-amt" style="color:${isPos?'#059669':'#dc2626'};">${gainTxt}</span>
+                    <span class="mf-gc-badge" style="background:${isPos?'#dcfce7':'#fee2e2'};color:${isPos?'#15803d':'#b91c1c'};">${pctTxt}</span>
+                </div>
+            </div>
         </div>`;
     }).join('');
 
     $('#mfGrowthCards').html(html);
 }
-
 // ═══════════════════════════════════════════════════════════════════════════
 // FINANCE GLOSSARY
 // ═══════════════════════════════════════════════════════════════════════════
