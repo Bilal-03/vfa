@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Virtual Finance Assistant</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,17 +13,6 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style_enhanced.css') }}">
 </head>
 <body>
-<!-- Mobile overlay -->
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
-
-<!-- Mobile top bar (hidden on desktop via CSS) -->
-<div class="mobile-topbar" style="display:none;">
-    <button class="mobile-hamburger" onclick="toggleSidebar()">
-        <i class="fas fa-bars"></i>
-    </button>
-    <span class="mobile-topbar-title"><i class="fas fa-chart-pie" style="color:#3b82f6;margin-right:6px;"></i>FinAssist</span>
-</div>
-
 <div class="container-fluid h-100">
 <div class="row h-100">
 
@@ -2258,30 +2247,6 @@ function submitZakat() {
                 </div>`);
         });
 }
-
-// ── Mobile sidebar toggle ────────────────────────────────────────────────────
-function toggleSidebar() {
-    const sidebar = document.querySelector('.menu-sidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    sidebar.classList.toggle('mobile-open');
-    overlay.classList.toggle('active');
-}
-function closeSidebar() {
-    document.querySelector('.menu-sidebar').classList.remove('mobile-open');
-    document.getElementById('sidebarOverlay').classList.remove('active');
-}
-// Close sidebar on any menu button click on mobile
-$(document).on('click', '.menu-btn', function() {
-    if (window.innerWidth <= 768) closeSidebar();
-});
-// Show/hide mobile topbar based on screen size
-function handleResize() {
-    const topbar = document.querySelector('.mobile-topbar');
-    if (!topbar) return;
-    topbar.style.display = window.innerWidth <= 768 ? 'flex' : 'none';
-}
-window.addEventListener('resize', handleResize);
-$(document).ready(function() { handleResize(); });
 
 </script>
 </body>

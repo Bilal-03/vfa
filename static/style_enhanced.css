@@ -1059,183 +1059,19 @@ select.form-control option {
 .custom-dropdown::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 .custom-dropdown::-webkit-scrollbar-thumb:hover { background: var(--muted-light); }
 
-/* ══════════════════════════════════════════════════════════════════════════
-   RESPONSIVE — TABLET & MOBILE
-   ══════════════════════════════════════════════════════════════════════════ */
-
-/* ── Tablet (≤ 1024px) ───────────────────────────────────────────────────── */
-@media (max-width: 1024px) {
+/* ── RESPONSIVE ───────────────────────────────────────────────────────── */
+@media (max-width: 1200px) {
   .features-grid { grid-template-columns: repeat(2, 1fr); }
+  .feature-card-wide { grid-column: span 2; }
   .chat-feature-card { grid-column: span 2; grid-row: auto; }
-  .market-widgets-grid { grid-template-columns: repeat(2, 1fr); }
 }
-
-/* ── Mobile (≤ 768px) ────────────────────────────────────────────────────── */
-
-/* Sidebar overlay — always present, hidden by default */
-.sidebar-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.45);
-  z-index: 998;
-}
-.sidebar-overlay.active { display: block; }
-
 @media (max-width: 768px) {
-
-  /* Kill Bootstrap's flex row — use block stacking */
-  .container-fluid,
-  .container-fluid .row {
-    display: block !important;
-    height: auto !important;
-    min-height: 100vh;
-  }
-
-  /* Sidebar: fixed drawer off-screen left */
-  .col-md-3.menu-sidebar {
-    position: fixed !important;
-    top: 0 !important;
-    left: -270px !important;
-    width: 260px !important;
-    max-width: 260px !important;
-    flex: none !important;
-    height: 100vh !important;
-    z-index: 999 !important;
-    transition: left 0.28s cubic-bezier(.4,0,.2,1);
-    box-shadow: none;
-    overflow-y: auto;
-  }
-
-  .col-md-3.menu-sidebar.mobile-open {
-    left: 0 !important;
-    box-shadow: 6px 0 32px rgba(0,0,0,0.22) !important;
-  }
-
-  /* Main content: full width, sits below mobile topbar */
-  .col-md-9.main-content {
-    display: block !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    flex: none !important;
-    height: auto !important;
-    min-height: calc(100vh - 56px);
-    overflow-y: auto;
-    padding-top: 0 !important;
-  }
-
-  /* Mobile topbar */
-  .mobile-topbar {
-    display: flex !important;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    background: #fff;
-    border-bottom: 1.5px solid #e2e8f0;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    height: 56px;
-    box-sizing: border-box;
-  }
-
-  .mobile-hamburger {
-    background: none;
-    border: none;
-    font-size: 1.25rem;
-    color: #1e293b;
-    cursor: pointer;
-    padding: 6px 8px;
-    border-radius: 8px;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-  }
-
-  .mobile-topbar-title {
-    font-weight: 700;
-    font-size: 1rem;
-    color: #1e293b;
-  }
-
-  /* Hide desktop card header on mobile */
-  .card-header { display: none !important; }
-
-  /* Home page content */
-  .home-page { padding: 16px 14px 30px; }
-  .home-hero { text-align: center; padding: 16px 0 14px; }
-  .home-hero h1 { font-size: 1.45rem; line-height: 1.3; }
-  .home-hero p  { font-size: 0.85rem; }
-
-  /* Feature cards — single column stacked */
-  .features-grid {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 10px;
-  }
-  .chat-feature-card { grid-column: unset !important; grid-row: unset !important; }
-
-  .feature-card {
-    padding: 14px 14px;
-    flex-direction: row !important;
-    align-items: center;
-    gap: 14px;
-    min-height: unset;
-  }
-  .feature-icon { width: 42px !important; height: 42px !important; font-size: 1rem !important; flex-shrink: 0; }
-  .feature-body { flex: 1; min-width: 0; }
-  .feature-body h3 { font-size: 0.9rem; margin: 0 0 2px; }
-  .feature-body p  { display: none; }
-  .feature-tags { display: none; }
-  .feature-arrow { margin-left: auto; flex-shrink: 0; }
-
-  /* Market widgets */
-  .market-widgets-grid {
-    grid-template-columns: 1fr !important;
-    gap: 10px;
-  }
-
-  /* Forms and results */
-  .input-form { padding: 16px 14px; }
-  #resultsContent { padding: 14px; }
-  .stepsip-summary { grid-template-columns: 1fr 1fr; gap: 10px; }
-  .stepsip-table { font-size: 0.76rem; }
-  .stepsip-table th, .stepsip-table td { padding: 7px 5px; }
-
-  /* Scrollable pill bars */
-  .mf-cat-bar,
-  .gloss-cats,
-  .news-sources-bar {
-    flex-wrap: nowrap !important;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 6px;
-  }
-  .mf-cat-btn, .gloss-cat-btn, .news-src-chip { flex-shrink: 0; }
-
-  /* Stock card */
-  .sfc-row-grid { grid-template-columns: 1fr 1fr; }
-  .sfc-big-price { font-size: 1.7rem; }
-
-  /* Calculator heroes */
-  .emi-hero-value, .fd-hero-value, .zakat-hero-value { font-size: 1.75rem; }
-
-  /* Zakat nisab */
-  .zakat-nisab-bar { flex-direction: column; gap: 10px; }
-
-  /* Chat */
-  #messageArea { padding: 10px 12px; }
-  .msg_cotainer, .msg_cotainer_send { max-width: 88%; font-size: 0.87rem; }
-
-  /* MF search */
-  .mf-search-input { font-size: 0.9rem; }
-}
-
-/* ── Very small phones (≤ 390px) ─────────────────────────────────────────── */
-@media (max-width: 390px) {
-  .home-hero h1 { font-size: 1.25rem; }
-  .stepsip-summary { grid-template-columns: 1fr 1fr; }
-  .emi-hero-value, .fd-hero-value { font-size: 1.5rem; }
+  .home-page { padding: 30px 24px; }
+  .features-grid { grid-template-columns: 1fr; }
+  .feature-card-wide { grid-column: span 1; }
+  .chat-feature-card { grid-column: span 1; grid-row: auto; }
+  .home-hero { text-align: center; }
+  .home-hero h1 { font-size: 1.6rem; }
 }
 /* ── Market News Panel ──────────────────────────────────────────────────── */
 #newsPanel {
