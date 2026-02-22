@@ -193,10 +193,18 @@ const FinTracker = (() => {
     // ════════════════════════════════════════════════════════════════════════
     let _pt = null;
 
+    let _editMode = false; // true when editing existing holding (replace, not merge)
+
     function openAddHolding(pre='') {
         if (!_username) { renderIdentityScreen(); return; }
+        _editMode = false;
         const m=document.getElementById('pt-modal'); if(!m)return;
+        const title = document.getElementById('pt-modal-title');
+        if (title) title.textContent = 'Add Holding';
+        const saveBtn = document.getElementById('pt-modal-save-btn');
+        if (saveBtn) saveBtn.innerHTML = '<i class="fas fa-plus"></i> Add Holding';
         document.getElementById('pt-modal-sym').value=pre||'';
+        document.getElementById('pt-modal-sym').readOnly=false;
         document.getElementById('pt-modal-qty').value='';
         document.getElementById('pt-modal-avg').value='';
         document.getElementById('pt-modal-err').textContent='';
@@ -204,7 +212,32 @@ const FinTracker = (() => {
         setTimeout(()=>document.getElementById(pre?'pt-modal-qty':'pt-modal-sym').focus(),120);
     }
 
-    function closeModal(){document.getElementById('pt-modal')?.classList.remove('pt-modal-open');}
+    function editHolding(sym) {
+        if (!_username) { renderIdentityScreen(); return; }
+        const holding = _portfolioCache.find(h=>h.symbol===sym);
+        if (!holding) return;
+        _editMode = true;
+        const m=document.getElementById('pt-modal'); if(!m)return;
+        const title = document.getElementById('pt-modal-title');
+        if (title) title.textContent = `Edit ${display(sym)}`;
+        const saveBtn = document.getElementById('pt-modal-save-btn');
+        if (saveBtn) saveBtn.innerHTML = '<i class="fas fa-save"></i> Update Holding';
+        const symInput = document.getElementById('pt-modal-sym');
+        symInput.value = display(sym);
+        symInput.readOnly = true; // can't change symbol when editing
+        document.getElementById('pt-modal-qty').value = holding.qty;
+        document.getElementById('pt-modal-avg').value = holding.avg;
+        document.getElementById('pt-modal-err').textContent='';
+        m.classList.add('pt-modal-open');
+        setTimeout(()=>document.getElementById('pt-modal-qty').focus(),120);
+    }
+
+    function closeModal(){
+        document.getElementById('pt-modal')?.classList.remove('pt-modal-open');
+        _editMode = false;
+        const symInput = document.getElementById('pt-modal-sym');
+        if (symInput) symInput.readOnly = false;
+    }
 
     async function saveHolding() {
         const rawSym=document.getElementById('pt-modal-sym').value.trim();
@@ -215,12 +248,19 @@ const FinTracker = (() => {
         if(!qty||qty<=0){err.textContent='Enter a valid quantity.';return;}
         if(!avg||avg<=0){err.textContent='Enter a valid average buy price.';return;}
 
-        const sym = resolve(rawSym);
+        const sym = _editMode ? _portfolioCache.find(h=>display(h.symbol)===rawSym||h.symbol===rawSym)?.symbol || resolve(rawSym) : resolve(rawSym);
         const port = _portfolioCache;
         const idx = port.findIndex(h=>h.symbol===sym);
         let finalQty = qty, finalAvg = avg, addedAt = Date.now();
 
-        if(idx>=0){
+        if(_editMode && idx>=0){
+            // Edit mode: directly replace qty and avg
+            const o=port[idx];
+            addedAt = o.addedAt || Date.now();
+            _portfolioCache[idx] = {...o, qty:finalQty, avg:finalAvg};
+            toast(`${display(sym)} updated ✏️`);
+        } else if(!_editMode && idx>=0){
+            // Add mode on existing: merge (recalculate avg)
             const o=port[idx]; const tq=o.qty+qty;
             finalQty = tq;
             finalAvg = parseFloat(((o.qty*o.avg+qty*avg)/tq).toFixed(4));
@@ -301,9 +341,14 @@ const FinTracker = (() => {
                 <td class="pt-mono ${pnl!=null?cls(pnl):''}">${pnl!=null?(pnl>=0?'+':'')+fmtMoney(pnl,curr):'—'}</td>
                 <td class="pt-mono ${pnlP!=null?cls(pnlP):''}">${pnlP!=null?fmtPct(pnlP):'—'}</td>
                 <td onclick="event.stopPropagation()">
-                    <button class="pt-remove-btn" onclick="FinTracker.removeHolding('${h.symbol}')" title="Remove">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
+                    <div class="pt-action-btns">
+                        <button class="pt-edit-btn" onclick="FinTracker.editHolding('${h.symbol}')" title="Edit holding">
+                            <i class="fas fa-pencil-alt"></i>
+                        </button>
+                        <button class="pt-remove-btn" onclick="FinTracker.removeHolding('${h.symbol}')" title="Remove">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
                 </td>
             </tr>`;
         }).join('');
@@ -405,7 +450,7 @@ const FinTracker = (() => {
 
     return {
         isInWatchlist, addToWatchlist, removeFromWatchlist, addFromInput,
-        openAddHolding, closeModal, saveHolding, removeHolding,
+        openAddHolding, editHolding, closeModal, saveHolding, removeHolding,
         startWatchlistRefresh, stopWatchlistRefresh,
         startPortfolioRefresh, stopPortfolioRefresh,
         submitUsername, switchUser, getUsername,
