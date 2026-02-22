@@ -626,9 +626,10 @@
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(15,23,42,0.5);
-    z-index: 2999;
-    backdrop-filter: blur(2px);
+    background: rgba(15,23,42,0.45);
+    z-index: 2998;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
 }
 #mob-sidebar-overlay.show { display: block; }
 
@@ -957,6 +958,29 @@
     .pt-btn { padding: 8px 14px !important; font-size: 12px !important; }
 }
 
+/* ── Footer Credit ── */
+#site-footer {
+    text-align: center;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    border-top: 1px solid #e2e8f0;
+    font-size: 11.5px;
+    color: #94a3b8;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    flex-shrink: 0;
+}
+#site-footer .footer-name {
+    color: #2563eb;
+    font-weight: 800;
+    font-size: 13px;
+}
+#site-footer .footer-tag {
+    font-family: 'JetBrains Mono', monospace;
+    color: #7c3aed;
+    font-weight: 700;
+}
+
 </style>
 
 </head>
@@ -975,10 +999,17 @@ function toggleMobMenu() {
     var overlay = document.getElementById('mob-sidebar-overlay');
     var icon    = document.getElementById('mob-menu-icon');
     if (!sidebar) return;
-    var isOpen = sidebar.classList.toggle('mob-open');
-    overlay.classList.toggle('show', isOpen);
-    icon.className = isOpen ? 'fas fa-times' : 'fas fa-bars';
-    document.body.style.overflow = isOpen ? 'hidden' : '';
+    var isOpen = sidebar.classList.contains('mob-open');
+    if (isOpen) { closeMobMenu(); } else { openMobMenu(); }
+}
+function openMobMenu() {
+    var sidebar = document.querySelector('.menu-sidebar');
+    var overlay = document.getElementById('mob-sidebar-overlay');
+    var icon    = document.getElementById('mob-menu-icon');
+    if (!sidebar) return;
+    sidebar.classList.add('mob-open');
+    overlay.classList.add('show');
+    if (icon) icon.className = 'fas fa-times';
 }
 function closeMobMenu() {
     var sidebar = document.querySelector('.menu-sidebar');
@@ -988,15 +1019,26 @@ function closeMobMenu() {
     sidebar.classList.remove('mob-open');
     overlay.classList.remove('show');
     if (icon) icon.className = 'fas fa-bars';
-    document.body.style.overflow = '';
 }
-// Close sidebar when any menu item is clicked on mobile
+// Auto-close sidebar when any menu item is clicked on mobile
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.sb-item').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            if (window.innerWidth <= 991) closeMobMenu();
+            if (window.innerWidth <= 991) {
+                // Small delay so the onclick action fires first, then sidebar closes
+                setTimeout(closeMobMenu, 80);
+            }
         });
     });
+    // Also close on overlay tap
+    var overlay = document.getElementById('mob-sidebar-overlay');
+    if (overlay) {
+        overlay.addEventListener('click', closeMobMenu);
+        overlay.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            closeMobMenu();
+        });
+    }
 });
 </script>
 <div class="container-fluid h-100">
@@ -1057,6 +1099,44 @@ document.addEventListener('DOMContentLoaded', function() {
 .sb-chat           { color: #6d28d9 !important; font-weight: 600; }
 .sb-chat:hover     { background: rgba(124,58,237,0.07) !important; }
 .sb-chat.active    { background: rgba(124,58,237,0.12) !important; color: #7c3aed !important; }
+
+/* Sidebar credit */
+.sb-credit {
+    margin: 16px 14px 8px;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    text-align: center;
+}
+.sb-credit-text {
+    font-size: 10px;
+    color: #94a3b8;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+.sb-credit-name {
+    font-size: 14px;
+    font-weight: 800;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+.sb-credit-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: #7c3aed;
+    font-weight: 700;
+}
+.sb-credit-sub {
+    font-size: 9.5px;
+    color: #cbd5e1;
+    margin-top: 3px;
+}
 </style>
 
 <div class="col-md-3 menu-sidebar">
@@ -1133,6 +1213,13 @@ document.addEventListener('DOMContentLoaded', function() {
     <button class="sb-item sb-learn" onclick="showForm('glossary'); setSbActive(this)">
         <div class="sb-icon"><i class="fas fa-book-open"></i></div><span>Finance Glossary</span>
     </button>
+
+    <!-- Credit -->
+    <div class="sb-credit">
+        <div class="sb-credit-text">Designed &amp; Developed by</div>
+        <div class="sb-credit-name"><span class="sb-credit-tag">&lt;/&gt;</span> Bilal</div>
+        <div class="sb-credit-sub">FinAssist · Virtual Finance Assistant</div>
+    </div>
 </div>
 
 <script>
@@ -1868,6 +1955,12 @@ document.addEventListener('DOMContentLoaded', function(){
                 <button type="button" id="voiceInput" class="input-group-text voice_btn"><i class="fas fa-microphone"></i></button>
             </div>
         </form>
+    </div>
+
+    <!-- ── Footer Credit ── -->
+    <div id="site-footer">
+        Designed &amp; Developed by <span class="footer-tag">&lt;/&gt;</span> <span class="footer-name">Bilal</span>
+        &nbsp;·&nbsp; FinAssist · Virtual Finance Assistant
     </div>
 
 </div></div></div><!-- card / chat-container / main-content -->
@@ -3799,5 +3892,6 @@ function submitZakat() {
 </script>
 <script src="{{ url_for('static', filename='stock_dashboard.js') }}"></script>
 <script src="{{ url_for('static', filename='portfolio_watchlist.js') }}"></script>
+
 </body>
 </html>

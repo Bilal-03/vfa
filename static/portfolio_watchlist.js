@@ -343,7 +343,7 @@ const FinTracker = (() => {
                 <td onclick="event.stopPropagation()">
                     <div class="pt-action-btns">
                         <button class="pt-edit-btn" onclick="FinTracker.editHolding('${h.symbol}')" title="Edit holding">
-                            <i class="fas fa-pencil-alt"></i>
+                            <i class="fas fa-pen"></i>
                         </button>
                         <button class="pt-remove-btn" onclick="FinTracker.removeHolding('${h.symbol}')" title="Remove">
                             <i class="fas fa-trash-alt"></i>
