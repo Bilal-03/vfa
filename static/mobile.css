@@ -527,36 +527,109 @@
 
 @media (max-width: 768px) {
 
-/* ── FIX 1: Home page blank on return ────────────────────────────────────
-   welcomeScreen sits inside .card-body which has overflow-y:auto on desktop.
-   On mobile the card-body flex chain collapses. Force it to fill properly. */
+/* ── FIX 1: Home page bleeding through other panels + bottom padding ──────
+   All panels (.feature-panel, #portfolioPanel etc.) are siblings of
+   #welcomeScreen inside .card. On mobile they must fully cover it.
+   Solution: make .card position:relative, stack all panels absolutely
+   so they sit on top of the home screen with a solid background. */
+
+  /* The card is the stacking root */
+  .card {
+    position: relative !important;
+  }
+
+  /* welcomeScreen — normal flow, scrollable, solid background */
   #welcomeScreen {
     display: flex;
     flex-direction: column;
-    width: 100%;
-    min-height: 100%;
+    width: 100% !important;
+    min-height: 100% !important;
     height: auto !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch;
-    background: var(--bg, #f0f2f7) !important;
-  }
-
-  /* Ensure card-body is actually a scrollable container on mobile */
-  .card-body {
-    display: block !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
-    height: auto !important;
+    background: #f0f2f7 !important;
+    padding-bottom: 100px !important; /* clear bottom nav + extra */
+    position: relative !important;
+    z-index: 1 !important;
+  }
+
+  /* All sibling panels stack above welcomeScreen with solid background */
+  #messageFormeight,
+  #currencyPanel,
+  #metalsPanel,
+  #mfPanel,
+  #glossaryPanel,
+  #newsPanel,
+  #resultsContainer,
+  #stockDashboardPanel,
+  #portfolioPanel,
+  #formsContainer {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: #f0f2f7 !important;
+    z-index: 10 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 80px !important;
+  }
+
+  /* Portfolio panel has its own background */
+  #portfolioPanel {
+    background: #f8fafc !important;
+    display: none; /* keep default, JS shows it */
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  /* formsContainer and resultsContainer need padding for scroll */
+  #formsContainer,
+  #resultsContainer {
+    padding: 0 !important;
+    padding-bottom: 80px !important;
+  }
+
+  /* Feature panels (currency, metals etc.) need white bg */
+  #currencyPanel,
+  #metalsPanel,
+  #mfPanel,
+  #glossaryPanel {
+    background: #fff !important;
+    flex-direction: column !important;
+  }
+
+  /* News panel */
+  #newsPanel {
+    background: #f8fafc !important;
+    padding: 14px !important;
+    padding-bottom: 80px !important;
+  }
+
+  /* Stock dashboard */
+  #stockDashboardPanel {
+    background: #fff !important;
+    padding: 12px 14px !important;
+    padding-bottom: 80px !important;
+  }
+
+  /* Chat messages */
+  #messageFormeight {
+    background: #f0f2f7 !important;
+    display: none; /* default hidden, JS sets flex */
+    flex-direction: column !important;
+  }
+
+  /* card-body (welcomeScreen) scrolls normally */
+  .card-body {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
     flex: 1 1 auto !important;
     min-height: 0 !important;
-  }
-
-  /* formsContainer also needs to scroll properly */
-  .forms-container {
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch !important;
     height: auto !important;
-    padding-bottom: 80px !important;
   }
 
 
