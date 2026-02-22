@@ -2,12 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="theme-color" content="#2563eb">
-    <title>FinAssist</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Finance Assistant</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -17,7 +13,6 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style_enhanced.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='stock_dashboard.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='portfolio_watchlist.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='mobile.css') }}">
     <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
     <style>
     /* ── Portfolio Modal Fix ── */
@@ -804,16 +799,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
     <!-- Header -->
     <div class="card-header">
-        <!-- Desktop title -->
-        <h5 class="d-none d-md-flex"><i class="fas fa-robot"></i> Virtual Finance Assistant</h5>
-        <!-- Mobile brand header -->
-        <div class="mobile-brand-header d-flex d-md-none">
-            <div class="mobile-brand-icon"><i class="fas fa-chart-pie"></i></div>
-            <div>
-                <div class="mobile-brand-text">FinAssist</div>
-                <div class="mobile-brand-sub">Virtual Finance Assistant</div>
-            </div>
-        </div>
+        <h5><i class="fas fa-robot"></i> Virtual Finance Assistant</h5>
     </div>
 
     <!-- Ticker Bar -->
@@ -3459,194 +3445,6 @@ function submitZakat() {
 </script>
 <script src="{{ url_for('static', filename='stock_dashboard.js') }}"></script>
 <script src="{{ url_for('static', filename='portfolio_watchlist.js') }}"></script>
-
-<!-- ═══════════════════════════════════════════════════════════
-     MOBILE BOTTOM NAVIGATION BAR
-     ═══════════════════════════════════════════════════════════ -->
-<nav class="mob-nav" id="mobNav">
-    <button class="mob-nav-item active" id="mbn-home" onclick="mobNav('home')">
-        <div class="mob-nav-icon"><i class="fas fa-home"></i></div>
-        <span class="mob-nav-label">Home</span>
-    </button>
-    <button class="mob-nav-item" id="mbn-stock" onclick="mobNav('stock')">
-        <div class="mob-nav-icon"><i class="fas fa-chart-bar"></i></div>
-        <span class="mob-nav-label">Markets</span>
-    </button>
-    <button class="mob-nav-item" id="mbn-portfolio" onclick="mobNav('portfolio')">
-        <div class="mob-nav-icon"><i class="fas fa-briefcase"></i></div>
-        <span class="mob-nav-label">Portfolio</span>
-    </button>
-    <button class="mob-nav-item" id="mbn-chat" onclick="mobNav('chat')">
-        <div class="mob-nav-icon"><i class="fas fa-comments"></i></div>
-        <span class="mob-nav-label">AI Chat</span>
-    </button>
-    <button class="mob-nav-item" id="mbn-more" onclick="openMobDrawer()">
-        <div class="mob-nav-icon"><i class="fas fa-grid-2" style="font-size:13px;"></i></div>
-        <span class="mob-nav-label">More</span>
-    </button>
-</nav>
-
-<!-- More Drawer Overlay -->
-<div class="mob-drawer-overlay" id="mobDrawerOverlay" onclick="closeMobDrawer()"></div>
-
-<!-- More Drawer -->
-<div class="mob-drawer" id="mobDrawer">
-    <div class="mob-drawer-handle"></div>
-
-    <div class="mob-drawer-title">Calculators</div>
-    <div class="mob-drawer-grid">
-        <button class="mob-drawer-item" onclick="mobNavDrawer('emi')">
-            <div class="mob-drawer-icon" style="background:rgba(245,158,11,0.1);color:#d97706;"><i class="fas fa-home"></i></div>
-            <span class="mob-drawer-label">EMI Calc</span>
-        </button>
-        <button class="mob-drawer-item" onclick="mobNavDrawer('sip')">
-            <div class="mob-drawer-icon" style="background:rgba(245,158,11,0.1);color:#d97706;"><i class="fas fa-coins"></i></div>
-            <span class="mob-drawer-label">SIP Calc</span>
-        </button>
-        <button class="mob-drawer-item" onclick="mobNavDrawer('stepsip')">
-            <div class="mob-drawer-icon" style="background:rgba(245,158,11,0.1);color:#d97706;"><i class="fas fa-chart-line"></i></div>
-            <span class="mob-drawer-label">Step-up SIP</span>
-        </button>
-        <button class="mob-drawer-item" onclick="mobNavDrawer('fd')">
-            <div class="mob-drawer-icon" style="background:rgba(245,158,11,0.1);color:#d97706;"><i class="fas fa-piggy-bank"></i></div>
-            <span class="mob-drawer-label">Fixed Deposit</span>
-        </button>
-        <button class="mob-drawer-item" onclick="mobNavDrawer('zakat')">
-            <div class="mob-drawer-icon" style="background:rgba(245,158,11,0.1);color:#d97706;"><i class="fas fa-star-and-crescent"></i></div>
-            <span class="mob-drawer-label">Zakat</span>
-        </button>
-    </div>
-
-    <div class="mob-drawer-sep"></div>
-    <div class="mob-drawer-title">Market Data</div>
-    <div class="mob-drawer-grid">
-        <button class="mob-drawer-item" onclick="mobNavDrawer('news')">
-            <div class="mob-drawer-icon" style="background:rgba(14,165,233,0.1);color:#0ea5e9;"><i class="fas fa-newspaper"></i></div>
-            <span class="mob-drawer-label">Market News</span>
-        </button>
-        <button class="mob-drawer-item" onclick="mobNavDrawer('currency')">
-            <div class="mob-drawer-icon" style="background:rgba(14,165,233,0.1);color:#0ea5e9;"><i class="fas fa-exchange-alt"></i></div>
-            <span class="mob-drawer-label">Currency</span>
-        </button>
-        <button class="mob-drawer-item" onclick="mobNavDrawer('metals')">
-            <div class="mob-drawer-icon" style="background:rgba(14,165,233,0.1);color:#0ea5e9;"><i class="fas fa-gem"></i></div>
-            <span class="mob-drawer-label">Gold &amp; Silver</span>
-        </button>
-        <button class="mob-drawer-item" onclick="mobNavDrawer('mf')">
-            <div class="mob-drawer-icon" style="background:rgba(5,150,105,0.1);color:#059669;"><i class="fas fa-layer-group"></i></div>
-            <span class="mob-drawer-label">Mutual Funds</span>
-        </button>
-        <button class="mob-drawer-item" onclick="mobNavDrawer('glossary')">
-            <div class="mob-drawer-icon" style="background:rgba(139,92,246,0.1);color:#7c3aed;"><i class="fas fa-book-open"></i></div>
-            <span class="mob-drawer-label">Glossary</span>
-        </button>
-    </div>
-</div>
-
-<script>
-// ── Mobile Navigation ──────────────────────────────────────────────────────
-function mobNav(section) {
-    // Deactivate all mobile nav items
-    document.querySelectorAll('.mob-nav-item').forEach(b => b.classList.remove('active'));
-    const btn = document.getElementById('mbn-' + section);
-    if (btn) btn.classList.add('active');
-
-    // Also sync desktop sidebar
-    showForm(section);
-    // Sync sb-item active
-    document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
-}
-
-function mobNavDrawer(section) {
-    closeMobDrawer();
-    // Deactivate bottom nav (drawer items aren't in bottom nav)
-    document.querySelectorAll('.mob-nav-item').forEach(b => b.classList.remove('active'));
-    showForm(section);
-    document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
-}
-
-function openMobDrawer() {
-    document.getElementById('mobDrawer').classList.add('open');
-    document.getElementById('mobDrawerOverlay').classList.add('open');
-}
-function closeMobDrawer() {
-    document.getElementById('mobDrawer').classList.remove('open');
-    document.getElementById('mobDrawerOverlay').classList.remove('open');
-}
-
-// Swipe down to close drawer
-(function() {
-    let startY = 0;
-    const drawer = document.getElementById('mobDrawer');
-    drawer.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
-    drawer.addEventListener('touchend', e => {
-        if (e.changedTouches[0].clientY - startY > 60) closeMobDrawer();
-    }, { passive: true });
-})();
-
-// Patch showForm + goHome AFTER all scripts load so they are defined
-window.addEventListener('DOMContentLoaded', function() {
-
-    // ── Sync mobile nav active tab whenever showForm is called ──────────
-    var tabMap = { home: 'home', stock: 'stock', portfolio: 'portfolio', chat: 'chat' };
-
-    function setMobNavActive(section) {
-        document.querySelectorAll('.mob-nav-item').forEach(function(b) { b.classList.remove('active'); });
-        var key = tabMap[section];
-        if (key) {
-            var el = document.getElementById('mbn-' + key);
-            if (el) el.classList.add('active');
-        }
-    }
-
-    // On mobile, ensure the absolute panels are actually hidden when not in use
-    // (CSS position:absolute means they still paint even with display:none — we double-ensure)
-    function hideMobPanels() {
-        if (window.innerWidth > 768) return;
-        var panels = ['messageFormeight','currencyPanel','metalsPanel','mfPanel',
-                      'glossaryPanel','newsPanel','resultsContainer','stockDashboardPanel',
-                      'portfolioPanel','formsContainer'];
-        panels.forEach(function(id) {
-            var el = document.getElementById(id);
-            if (el && el.style.display !== 'none' && el.style.display !== '') {
-                // leave as-is — showForm controls display
-            }
-        });
-    }
-
-    if (typeof window.showForm === 'function') {
-        var _origSF = window.showForm;
-        window.showForm = function(section) {
-            _origSF(section);
-            setMobNavActive(section);
-            // Hide fixed chat footer when not in chat (prevents ghost overlay)
-            if (section !== 'chat') {
-                var cf = document.getElementById('chatFooter');
-                if (cf) cf.style.display = 'none';
-            }
-        };
-    }
-
-    // ── Patch goHome ────────────────────────────────────────────────────
-    if (typeof window.goHome === 'function') {
-        var _origGH = window.goHome;
-        window.goHome = function() {
-            _origGH();
-            // Hide chat footer so it doesn't ghost over home
-            var cf = document.getElementById('chatFooter');
-            if (cf) cf.style.display = 'none';
-            // Set home tab active
-            document.querySelectorAll('.mob-nav-item').forEach(function(b) { b.classList.remove('active'); });
-            var hEl = document.getElementById('mbn-home');
-            if (hEl) hEl.classList.add('active');
-        };
-    }
-
-    // ── Set Home active on first load ───────────────────────────────────
-    var homeEl = document.getElementById('mbn-home');
-    if (homeEl) homeEl.classList.add('active');
-});
-</script>
 
 </body>
 </html>
