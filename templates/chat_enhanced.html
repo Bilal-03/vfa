@@ -622,8 +622,12 @@
     inset: 0;
     background: rgba(15,23,42,0.5);
     z-index: 1040;
+    pointer-events: none;
 }
-#mob-sidebar-overlay.show { display: block; }
+#mob-sidebar-overlay.show { 
+    display: block; 
+    pointer-events: auto;
+}
 
 /* ── Footer Credit ── */
 #site-footer {
@@ -669,9 +673,11 @@
         padding-top: 0 !important;
         flex: none !important;
         max-width: none !important;
+        pointer-events: auto !important;
     }
     .menu-sidebar.mob-open {
         transform: translateX(0) !important;
+        pointer-events: auto !important;
     }
 
     /* Main content: full width */
@@ -867,6 +873,8 @@ function openMobMenu() {
     sidebar.classList.add('mob-open');
     if (overlay) overlay.classList.add('show');
     if (icon)    icon.className = 'fas fa-times';
+    // Prevent body scroll on mobile when menu is open
+    document.body.style.overflow = 'hidden';
 }
 function closeMobMenu() {
     var sidebar = document.querySelector('.menu-sidebar');
@@ -876,6 +884,8 @@ function closeMobMenu() {
     sidebar.classList.remove('mob-open');
     if (overlay) overlay.classList.remove('show');
     if (icon)    icon.className = 'fas fa-bars';
+    // Restore body scroll
+    document.body.style.overflow = '';
 }
 // Attach close-on-click to every sidebar item after DOM ready
 document.addEventListener('DOMContentLoaded', function() {
