@@ -362,7 +362,22 @@
     .pt-tr:hover .pt-remove-btn { color: #cbd5e1; transform: scale(1); }
     .pt-remove-btn:hover { color: #dc2626 !important; background: #fee2e2; transform: scale(1.15) !important; }
 
-    /* Skeleton */
+    .pt-edit-btn {
+        background: none;
+        border: none;
+        color: #e2e8f0;
+        cursor: pointer;
+        padding: 7px 9px;
+        border-radius: 8px;
+        transition: all 0.2s cubic-bezier(.34,1.56,.64,1);
+        font-size: 13px;
+        transform: scale(0.9);
+    }
+    .pt-tr:hover .pt-edit-btn { color: #cbd5e1; transform: scale(1); }
+    .pt-edit-btn:hover { color: #2563eb !important; background: #dbeafe; transform: scale(1.15) !important; }
+    .pt-action-btns { display: flex; align-items: center; gap: 2px; }
+
+
     .pt-skel {
         background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
         background-size: 200% 100%;
@@ -593,309 +608,8 @@
     .pt-switch-btn:hover { color: #dc2626; }
     
     </style>
-
-<!-- ═══════════════════════════════════════════════════════
-     RESPONSIVE / MOBILE CSS — FinAssist
-     ═══════════════════════════════════════════════════════ -->
-<style>
-
-/* ── Hamburger button — hidden on desktop, shown on mobile ── */
-#mob-menu-btn {
-    display: none;
-    background: none;
-    border: none;
-    color: inherit;
-    font-size: 20px;
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 8px;
-    line-height: 1;
-    flex-shrink: 0;
-    -webkit-tap-highlight-color: transparent;
-}
-#mob-menu-btn:active { opacity: 0.7; }
-
-/* ── Sidebar overlay ── */
-#mob-sidebar-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(15,23,42,0.5);
-    z-index: 1040;
-    pointer-events: none;
-}
-#mob-sidebar-overlay.show { 
-    display: block; 
-    pointer-events: auto;
-}
-
-/* ── Footer Credit ── */
-#site-footer {
-    text-align: center;
-    padding: 12px 16px;
-    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-    border-top: 1px solid #e2e8f0;
-    font-size: 11.5px;
-    color: #94a3b8;
-    font-weight: 500;
-    flex-shrink: 0;
-}
-#site-footer .footer-name { color: #2563eb; font-weight: 800; font-size: 13px; }
-#site-footer .footer-tag  { font-family: 'JetBrains Mono', monospace; color: #7c3aed; font-weight: 700; }
-
-/* ── Tablet (≤ 991px) ── */
-@media (max-width: 991px) {
-
-    /* Show hamburger in header */
-    #mob-menu-btn { display: inline-flex; align-items: center; justify-content: center; }
-
-    /* Card header: space between title and hamburger */
-    #main-card-header {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        padding-left: 16px !important;
-    }
-
-    /* Sidebar: off-screen drawer, very high z-index so it floats above everything */
-    .menu-sidebar {
-        position: fixed !important;
-        top: 0 !important; left: 0 !important;
-        width: 270px !important;
-        max-width: 80vw !important;
-        height: 100dvh !important;
-        z-index: 1050 !important;
-        overflow-y: auto !important;
-        background: #fff !important;
-        box-shadow: 4px 0 32px rgba(0,0,0,0.18) !important;
-        transform: translateX(-110%) !important;
-        transition: transform 0.28s cubic-bezier(.4,0,.2,1) !important;
-        padding-top: 0 !important;
-        flex: none !important;
-        max-width: none !important;
-        pointer-events: auto !important;
-    }
-    .menu-sidebar.mob-open {
-        transform: translateX(0) !important;
-        pointer-events: auto !important;
-    }
-
-    /* Main content: full width */
-    .main-content {
-        flex: 0 0 100% !important;
-        max-width: 100% !important;
-        padding-left: 0 !important;
-        padding-right: 0 !important;
-        margin-left: 0 !important;
-    }
-
-    /* Ticker bar */
-    .ticker-bar { font-size: 12px; }
-
-    /* Hero: stack */
-    .home-hero-v2 {
-        flex-direction: column !important;
-        gap: 20px !important;
-        padding: 30px 20px 24px !important;
-        text-align: center;
-        border-radius: 14px !important;
-    }
-    .hero-icon-cluster { width: 90px; height: 90px; }
-    .hero-center-icon  { width: 54px; height: 54px; font-size: 1.4rem !important; }
-    .hero-title { font-size: 1.5rem !important; }
-    .hero-sub   { font-size: 0.85rem !important; }
-    .hero-stats { justify-content: center; }
-    .hero-chips { justify-content: center; }
-
-    /* Feature cards: 2 col */
-    .features-grid { grid-template-columns: 1fr 1fr !important; grid-template-rows: auto !important; }
-    .chat-feature-card { grid-column: span 2 !important; grid-row: auto !important; }
-
-    /* Market widgets: 2 col */
-    .market-widgets-grid { grid-template-columns: 1fr 1fr !important; }
-
-    /* Portfolio summary cards: 2 col */
-    .pt-summary-cards { grid-template-columns: repeat(2, 1fr) !important; }
-    .pt-panel-header  { padding: 16px 18px !important; }
-    .pt-scroll-area   { padding: 14px !important; }
-
-    #formsContainer   { padding: 0 !important; }
-    #resultsContainer { padding: 0 !important; }
-
-    /* Toast: bottom-center */
-    .pt-toast {
-        bottom: 16px !important;
-        right: 50% !important;
-        transform: translateX(50%) translateY(10px) !important;
-    }
-    .pt-toast.pt-toast-show { transform: translateX(50%) translateY(0) !important; }
-}
-
-/* ── Mobile (≤ 600px) ── */
-@media (max-width: 600px) {
-    body { font-size: 14px; }
-    .card { border-radius: 0 !important; }
-    .chat-container { padding: 0 !important; }
-    .card-header h5 { font-size: 0.9rem !important; }
-
-    /* Hero */
-    .home-hero-v2  { padding: 22px 14px 18px !important; border-radius: 10px !important; }
-    .hero-title    { font-size: 1.2rem !important; }
-    .hero-stat     { padding: 8px 12px !important; }
-    .hero-stat-val { font-size: 1rem !important; }
-
-    /* Single-column layout */
-    .features-grid          { grid-template-columns: 1fr !important; }
-    .chat-feature-card      { grid-column: 1 !important; }
-    .market-widgets-grid    { grid-template-columns: 1fr !important; }
-
-    /* Portfolio: stacked card view instead of table */
-    .pt-table thead { display: none !important; }
-    .pt-table, .pt-table tbody, .pt-table tr, .pt-table td { display: block !important; width: 100% !important; }
-    .pt-table-wrap  { border-radius: 12px !important; overflow: hidden; }
-    .pt-tr {
-        border-bottom: 1px solid #e2e8f0 !important;
-        padding: 14px 14px 10px !important;
-        position: relative;
-    }
-    .pt-tr:last-child { border-bottom: none !important; }
-    .pt-tr td {
-        padding: 2px 0 !important; border-bottom: none !important;
-        display: flex !important; justify-content: space-between; align-items: center; font-size: 12.5px;
-    }
-    .pt-tr td:first-child  { justify-content: flex-start !important; padding-bottom: 8px !important; margin-bottom: 4px; border-bottom: 1px solid #f1f5f9 !important; }
-    .pt-tr td:nth-child(2)::before  { content: 'Qty'; font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
-    .pt-tr td:nth-child(3)::before  { content: 'Avg Buy'; font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
-    .pt-tr td:nth-child(4)::before  { content: 'LTP'; font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
-    .pt-tr td:nth-child(5)::before  { content: 'Invested'; font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
-    .pt-tr td:nth-child(6)::before  { content: 'Curr. Value'; font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
-    .pt-tr td:nth-child(7)::before  { content: 'P&L'; font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
-    .pt-tr td:nth-child(8)::before  { content: 'Return'; font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
-    .pt-tr td:last-child { position: absolute !important; top: 10px; right: 10px; width: auto !important; padding: 0 !important; justify-content: flex-end !important; border: none !important; }
-    .pt-action-btns { gap: 0 !important; }
-    .pt-edit-btn, .pt-remove-btn { padding: 6px 7px !important; font-size: 12px !important; }
-
-    /* Portfolio summary */
-    .pt-summary-cards { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
-    .pt-sum-card  { padding: 10px 12px !important; }
-    .pt-sum-val   { font-size: 13px !important; }
-    .pt-sum-label { font-size: 8px !important; }
-
-    /* Portfolio header */
-    .pt-panel-header { flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; padding: 14px !important; }
-    .pt-header-actions { width: 100%; justify-content: flex-end; }
-    .pt-panel-title { font-size: 0.95rem !important; }
-    .pt-scroll-area { padding: 12px 10px !important; }
-
-    /* Modal: bottom sheet */
-    .pt-modal-box {
-        position: fixed !important; bottom: 0 !important; left: 0 !important; right: 0 !important;
-        top: auto !important; border-radius: 20px 20px 0 0 !important;
-        max-width: 100% !important; margin: 0 !important; padding: 24px 20px 32px !important;
-    }
-    .pt-modal-overlay { align-items: flex-end !important; }
-
-    /* Forms */
-    .input-form    { padding: 14px !important; }
-    .input-form h5 { font-size: 0.95rem !important; }
-
-    /* Panels */
-    .fp-header { flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; padding: 14px !important; }
-    .fp-content { padding: 10px !important; }
-    .converter-row { flex-direction: column !important; gap: 8px !important; }
-    .conv-swap-btn { transform: rotate(90deg); }
-
-    /* Ticker */
-    .ticker-bar   { font-size: 11px; }
-    .ticker-label { font-size: 9px !important; }
-
-    /* Chat */
-    #chatFooter { padding: 8px 10px !important; }
-    .type_msg   { font-size: 13px !important; }
-
-    /* Misc */
-    #stockDashboardPanel { padding: 0 !important; }
-    .si-header { padding: 12px 14px !important; flex-wrap: wrap; gap: 8px; }
-    .mf-grid        { grid-template-columns: 1fr !important; }
-    .glossary-grid  { grid-template-columns: 1fr !important; }
-    .news-grid      { grid-template-columns: 1fr !important; }
-    .stepsip-compare     { font-size: 12px !important; }
-    .stepsip-compare-row { padding: 6px 10px !important; }
-    .zakat-hero       { padding: 18px 14px !important; }
-    .zakat-hero-value { font-size: 1.4rem !important; }
-    #si-back-btn      { font-size: 12px !important; padding: 6px 12px !important; }
-    #mfCatBar         { overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
-
-    /* Toast */
-    .pt-toast {
-        bottom: 12px !important; left: 10px !important; right: 10px !important;
-        width: calc(100% - 20px) !important; transform: translateY(10px) !important; justify-content: center;
-    }
-    .pt-toast.pt-toast-show { transform: translateY(0) !important; }
-
-    /* Identity card */
-    .pt-identity-card  { padding: 24px 18px 20px !important; }
-    .pt-identity-title { font-size: 1rem !important; }
-    .home-page { padding: 10px !important; }
-
-    /* Footer */
-    #site-footer { font-size: 11px; padding: 10px 14px; }
-}
-
-/* ── Very small screens (≤ 380px) ── */
-@media (max-width: 380px) {
-    .hero-title { font-size: 1.1rem !important; }
-    .hero-chips { gap: 5px !important; }
-    .hero-chip  { font-size: 0.72rem !important; padding: 5px 10px !important; }
-    .pt-sum-card { padding: 8px 10px !important; }
-    .pt-btn { padding: 8px 14px !important; font-size: 12px !important; }
-}
-
-</style>
-
 </head>
 <body>
-
-<!-- Sidebar overlay — clicking this closes the menu -->
-<div id="mob-sidebar-overlay" onclick="closeMobMenu()"></div>
-
-<script>
-function toggleMobMenu() {
-    var sidebar = document.querySelector('.menu-sidebar');
-    if (!sidebar) return;
-    if (sidebar.classList.contains('mob-open')) { closeMobMenu(); } else { openMobMenu(); }
-}
-function openMobMenu() {
-    var sidebar = document.querySelector('.menu-sidebar');
-    var overlay = document.getElementById('mob-sidebar-overlay');
-    var icon    = document.getElementById('mob-menu-icon');
-    if (!sidebar) return;
-    sidebar.classList.add('mob-open');
-    if (overlay) overlay.classList.add('show');
-    if (icon)    icon.className = 'fas fa-times';
-    // Prevent body scroll on mobile when menu is open
-    document.body.style.overflow = 'hidden';
-}
-function closeMobMenu() {
-    var sidebar = document.querySelector('.menu-sidebar');
-    var overlay = document.getElementById('mob-sidebar-overlay');
-    var icon    = document.getElementById('mob-menu-icon');
-    if (!sidebar) return;
-    sidebar.classList.remove('mob-open');
-    if (overlay) overlay.classList.remove('show');
-    if (icon)    icon.className = 'fas fa-bars';
-    // Restore body scroll
-    document.body.style.overflow = '';
-}
-// Attach close-on-click to every sidebar item after DOM ready
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.sb-item').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            if (window.innerWidth <= 991) setTimeout(closeMobMenu, 120);
-        });
-    });
-});
-</script>
 <div class="container-fluid h-100">
 <div class="row h-100">
 
@@ -954,44 +668,6 @@ document.addEventListener('DOMContentLoaded', function() {
 .sb-chat           { color: #6d28d9 !important; font-weight: 600; }
 .sb-chat:hover     { background: rgba(124,58,237,0.07) !important; }
 .sb-chat.active    { background: rgba(124,58,237,0.12) !important; color: #7c3aed !important; }
-
-/* Sidebar credit */
-.sb-credit {
-    margin: 16px 14px 8px;
-    padding: 14px 16px;
-    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    text-align: center;
-}
-.sb-credit-text {
-    font-size: 10px;
-    color: #94a3b8;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 4px;
-}
-.sb-credit-name {
-    font-size: 14px;
-    font-weight: 800;
-    color: #2563eb;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-}
-.sb-credit-tag {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    color: #7c3aed;
-    font-weight: 700;
-}
-.sb-credit-sub {
-    font-size: 9.5px;
-    color: #cbd5e1;
-    margin-top: 3px;
-}
 </style>
 
 <div class="col-md-3 menu-sidebar">
@@ -1068,13 +744,6 @@ document.addEventListener('DOMContentLoaded', function() {
     <button class="sb-item sb-learn" onclick="showForm('glossary'); setSbActive(this)">
         <div class="sb-icon"><i class="fas fa-book-open"></i></div><span>Finance Glossary</span>
     </button>
-
-    <!-- Credit -->
-    <div class="sb-credit">
-        <div class="sb-credit-text">Designed &amp; Developed by</div>
-        <div class="sb-credit-name"><span class="sb-credit-tag">&lt;/&gt;</span> Bilal</div>
-        <div class="sb-credit-sub">FinAssist · Virtual Finance Assistant</div>
-    </div>
 </div>
 
 <script>
@@ -1095,11 +764,8 @@ document.addEventListener('DOMContentLoaded', function(){
 <div class="card">
 
     <!-- Header -->
-    <div class="card-header" id="main-card-header">
+    <div class="card-header">
         <h5><i class="fas fa-robot"></i> Virtual Finance Assistant</h5>
-        <button id="mob-menu-btn" onclick="toggleMobMenu()" aria-label="Open menu">
-            <i class="fas fa-bars" id="mob-menu-icon"></i>
-        </button>
     </div>
 
     <!-- Ticker Bar -->
@@ -1610,7 +1276,7 @@ document.addEventListener('DOMContentLoaded', function(){
     <!-- ADD HOLDING MODAL -->
     <div class="pt-modal-overlay" id="pt-modal" onclick="if(event.target===this)FinTracker.closeModal()">
         <div class="pt-modal-box">
-            <div class="pt-modal-title"><i class="fas fa-plus-circle"></i> Add / Update Holding</div>
+            <div class="pt-modal-title" id="pt-modal-title"><i class="fas fa-plus-circle"></i> Add / Update Holding</div>
             <div class="pt-field">
                 <label>Stock Symbol</label>
                 <input type="text" id="pt-modal-sym" placeholder="e.g. RELIANCE, INFY, AAPL"
@@ -1629,7 +1295,7 @@ document.addEventListener('DOMContentLoaded', function(){
             <div class="pt-modal-err" id="pt-modal-err"></div>
             <div class="pt-modal-actions">
                 <button class="pt-btn pt-btn-ghost" onclick="FinTracker.closeModal()">Cancel</button>
-                <button class="pt-btn pt-btn-primary" onclick="FinTracker.saveHolding()">
+                <button class="pt-btn pt-btn-primary" id="pt-modal-save-btn" onclick="FinTracker.saveHolding()">
                     <i class="fas fa-check"></i> Save
                 </button>
             </div>
@@ -3744,6 +3410,5 @@ function submitZakat() {
 </script>
 <script src="{{ url_for('static', filename='stock_dashboard.js') }}"></script>
 <script src="{{ url_for('static', filename='portfolio_watchlist.js') }}"></script>
-
 </body>
 </html>
