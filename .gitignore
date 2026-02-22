@@ -1,6 +1,70 @@
-__pycache__/
-*.pyc
-*.pyo
+# ─────────────────────────────────────────────────────────────────
+# FinAssist — .gitignore
+# ─────────────────────────────────────────────────────────────────
+
+# ── Secrets (NEVER commit these) ─────────────────────────────────
 .env
-*.log
+.env.*
+*.env
+secrets.py
+
+# ── Python ───────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+
+# ── Virtual environments ──────────────────────────────────────────
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ── Distribution / packaging ──────────────────────────────────────
+dist/
+build/
+*.egg-info/
+*.egg
+.eggs/
+
+# ── Unit tests / coverage ─────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+
+# ── IDEs & editors ────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 .DS_Store
+Thumbs.db
+
+# ── Logs ──────────────────────────────────────────────────────────
+*.log
+logs/
+log/
+
+# ── Flask / Gunicorn ──────────────────────────────────────────────
+instance/
+.webassets-cache
+flask_session/
+
+# ── OS files ──────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini

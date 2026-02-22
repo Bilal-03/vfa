@@ -8,3 +8,6 @@ pyttsx3
 beautifulsoup4
 lxml
 gunicorn
+python-dotenv
+google-generativeai
+groq

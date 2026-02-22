@@ -11,12 +11,650 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style_enhanced.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='stock_dashboard.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='portfolio_watchlist.css') }}">
+    <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+    /* ── Portfolio Modal Fix ── */
+    .pt-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15,23,42,0.45);
+        backdrop-filter: blur(3px);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+    }
+    .pt-modal-overlay.pt-modal-open {
+        display: flex !important;
+    }
+    .pt-modal-box {
+        background: #fff;
+        border-radius: 16px;
+        padding: 28px 28px 24px;
+        width: 100%;
+        max-width: 440px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        margin: 16px;
+    }
+    .pt-modal-title {
+        font-size: 1rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .pt-modal-title i { color: #2563eb; }
+    .pt-field { margin-bottom: 14px; }
+    .pt-field label {
+        display: block;
+        font-size: 11.5px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+    }
+    .pt-field input {
+        width: 100%;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 9px 12px;
+        font-size: 13.5px;
+        color: #0f172a;
+        outline: none;
+        font-family: inherit;
+        transition: border-color 0.2s;
+    }
+    .pt-field input:focus { border-color: #2563eb; }
+    .pt-modal-err {
+        font-size: 12px;
+        color: #dc2626;
+        min-height: 18px;
+        margin-bottom: 6px;
+    }
+    .pt-modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 6px;
+    }
+    .pt-btn {
+        border: none;
+        border-radius: 8px;
+        padding: 9px 20px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: inherit;
+        transition: all 0.15s;
+    }
+    .pt-btn-primary { background: #2563eb; color: #fff; }
+    .pt-btn-primary:hover { background: #1d4ed8; }
+    .pt-btn-ghost { background: #f1f5f9; color: #64748b; }
+    .pt-btn-ghost:hover { background: #e2e8f0; }
+
+    /* ══════════════════════════════════════════════════════
+       Portfolio Panel — Enhanced Design & Animations
+       ══════════════════════════════════════════════════════ */
+
+    /* Animations */
+    @keyframes ptPulse   { 0%,100%{opacity:1} 50%{opacity:0.25} }
+    @keyframes ptShimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+    @keyframes ptFadeUp  { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes ptSlideIn { from{opacity:0;transform:translateX(-12px)} to{opacity:1;transform:translateX(0)} }
+    @keyframes ptScaleIn { from{opacity:0;transform:scale(0.94)} to{opacity:1;transform:scale(1)} }
+    @keyframes ptCardPop { 0%{transform:scale(1)} 40%{transform:scale(1.04)} 100%{transform:scale(1)} }
+
+    /* Panel Header */
+    .pt-panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 20px 28px;
+        background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
+        border-bottom: 1px solid #e2e8f0;
+        flex-shrink: 0;
+        position: relative;
+        overflow: hidden;
+    }
+    .pt-panel-header::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #2563eb, #7c3aed, #06b6d4);
+        background-size: 200% 100%;
+        animation: ptShimmer 3s linear infinite;
+    }
+    .pt-panel-title {
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .pt-panel-title .pt-title-icon {
+        width: 36px; height: 36px;
+        background: linear-gradient(135deg, #2563eb, #7c3aed);
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        color: #fff;
+        font-size: 15px;
+        box-shadow: 0 4px 12px rgba(37,99,235,0.3);
+    }
+    .pt-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .pt-live-badge {
+        font-size: 10.5px;
+        font-weight: 700;
+        color: #16a34a;
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: 20px;
+        padding: 5px 12px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .pt-live-dot {
+        width: 7px; height: 7px;
+        background: #22c55e;
+        border-radius: 50%;
+        display: inline-block;
+        animation: ptPulse 1.6s infinite;
+        box-shadow: 0 0 6px rgba(34,197,94,0.6);
+    }
+
+    /* Add Holding Button */
+    .pt-btn-primary {
+        position: relative;
+        background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+        color: #fff !important;
+        border: none;
+        border-radius: 10px;
+        padding: 9px 20px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        font-family: inherit;
+        box-shadow: 0 4px 14px rgba(37,99,235,0.35);
+        overflow: hidden;
+        transition: transform 0.18s cubic-bezier(.34,1.56,.64,1), box-shadow 0.18s ease;
+    }
+    .pt-btn-primary::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, transparent 60%);
+        pointer-events: none;
+    }
+    .pt-btn-primary:hover {
+        transform: translateY(-2px) scale(1.03);
+        box-shadow: 0 8px 22px rgba(37,99,235,0.45);
+    }
+    .pt-btn-primary:active { transform: scale(0.97); }
+    .pt-btn-primary i { transition: transform 0.2s ease; }
+    .pt-btn-primary:hover i { transform: rotate(90deg); }
+
+    /* Scroll area */
+    .pt-scroll-area { flex: 1; overflow-y: auto; padding: 20px 28px; }
+
+    /* Empty state */
+    .pt-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 70px 20px;
+        gap: 14px;
+        animation: ptFadeUp 0.5s ease;
+    }
+    .pt-empty-icon {
+        width: 72px; height: 72px;
+        background: linear-gradient(135deg, #eff6ff, #eef2ff);
+        border-radius: 20px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 2rem;
+        color: #2563eb;
+        box-shadow: 0 8px 24px rgba(37,99,235,0.12);
+    }
+    .pt-empty-title { font-size: 1.05rem; font-weight: 800; color: #1e293b; }
+    .pt-empty-sub { font-size: 13px; color: #94a3b8; text-align: center; line-height: 1.7; max-width: 280px; }
+
+    /* Summary Cards */
+    .pt-summary-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 12px;
+        margin-bottom: 4px;
+        animation: ptFadeUp 0.4s ease;
+    }
+    .pt-sum-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 14px 18px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        transition: transform 0.2s cubic-bezier(.34,1.56,.64,1),
+                    box-shadow 0.2s ease,
+                    border-color 0.2s ease;
+        cursor: default;
+        position: relative;
+        overflow: hidden;
+    }
+    .pt-sum-card::after {
+        content: '';
+        position: absolute;
+        bottom: 0; left: 0; right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #e2e8f0, #e2e8f0);
+        transition: background 0.3s ease;
+    }
+    .pt-sum-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        border-color: #bfdbfe;
+    }
+    .pt-sum-card.pt-up::after  { background: linear-gradient(90deg, #22c55e, #16a34a); }
+    .pt-sum-card.pt-down::after{ background: linear-gradient(90deg, #f87171, #dc2626); }
+    .pt-sum-label {
+        font-size: 9px;
+        font-weight: 700;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+    }
+    .pt-sum-val {
+        font-size: 16px;
+        font-weight: 800;
+        color: #0f172a;
+        margin-top: 6px;
+        font-family: 'JetBrains Mono', monospace;
+        line-height: 1.2;
+    }
+    .pt-sum-card.pt-up .pt-sum-val   { color: #16a34a; }
+    .pt-sum-card.pt-down .pt-sum-val { color: #dc2626; }
+
+    /* Table */
+    .pt-table-wrap {
+        overflow-x: auto;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+        margin-top: 16px;
+        animation: ptScaleIn 0.4s ease;
+    }
+    .pt-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .pt-table thead th {
+        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+        color: #64748b;
+        font-size: 9.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        padding: 12px 16px;
+        border-bottom: 1px solid #e2e8f0;
+        white-space: nowrap;
+    }
+    .pt-table thead th:first-child { border-radius: 16px 0 0 0; }
+    .pt-table thead th:last-child  { border-radius: 0 16px 0 0; }
+
+    /* Row animations */
+    .pt-tr {
+        transition: background 0.15s ease, transform 0.15s ease;
+        animation: ptSlideIn 0.35s ease both;
+    }
+    .pt-tr:nth-child(1)  { animation-delay: 0.03s; }
+    .pt-tr:nth-child(2)  { animation-delay: 0.06s; }
+    .pt-tr:nth-child(3)  { animation-delay: 0.09s; }
+    .pt-tr:nth-child(4)  { animation-delay: 0.12s; }
+    .pt-tr:nth-child(5)  { animation-delay: 0.15s; }
+    .pt-tr:nth-child(6)  { animation-delay: 0.18s; }
+    .pt-tr:nth-child(7)  { animation-delay: 0.21s; }
+    .pt-tr:nth-child(8)  { animation-delay: 0.24s; }
+    .pt-tr:nth-child(9)  { animation-delay: 0.27s; }
+    .pt-tr:nth-child(10) { animation-delay: 0.30s; }
+    .pt-tr:hover { background: #f8faff; }
+    .pt-tr td {
+        padding: 14px 16px;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+    }
+    .pt-tr:last-child td { border-bottom: none; }
+
+    /* LTP flash on update */
+    @keyframes ptFlash { 0%{background:rgba(37,99,235,0.12)} 100%{background:transparent} }
+    .pt-ltp-flash { animation: ptFlash 0.7s ease; border-radius: 4px; padding: 2px 4px; }
+
+    .pt-stock-cell { display: flex; align-items: center; gap: 12px; }
+    .pt-sym  { font-weight: 800; font-size: 13px; color: #0f172a; }
+    .pt-cname{ font-size: 10.5px; color: #94a3b8; margin-top: 2px; }
+    .pt-mono { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; white-space: nowrap; }
+    .pt-up   { color: #16a34a; }
+    .pt-down { color: #dc2626; }
+
+    .pt-remove-btn {
+        background: none;
+        border: none;
+        color: #e2e8f0;
+        cursor: pointer;
+        padding: 7px 9px;
+        border-radius: 8px;
+        transition: all 0.2s cubic-bezier(.34,1.56,.64,1);
+        font-size: 13px;
+        transform: scale(0.9);
+    }
+    .pt-tr:hover .pt-remove-btn { color: #cbd5e1; transform: scale(1); }
+    .pt-remove-btn:hover { color: #dc2626 !important; background: #fee2e2; transform: scale(1.15) !important; }
+
+    /* Skeleton */
+    .pt-skel {
+        background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+        background-size: 200% 100%;
+        animation: ptShimmer 1.5s infinite;
+        border-radius: 4px;
+    }
+
+    /* Logo fallback */
+    .pt-logo-fb {
+        background: linear-gradient(135deg, #2563eb, #7c3aed);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 11px;
+        flex-shrink: 0;
+        box-shadow: 0 2px 8px rgba(37,99,235,0.25);
+    }
+    /* Toast */
+    .pt-toast {
+        position: fixed;
+        bottom: 28px;
+        right: 24px;
+        background: #0f172a;
+        color: #fff;
+        padding: 11px 18px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+        z-index: 10000;
+        opacity: 0;
+        transform: translateY(10px);
+        transition: all 0.3s;
+    }
+    .pt-toast.pt-toast-show { opacity: 1; transform: translateY(0); }
+    .pt-toast-success i { color: #4ade80; }
+    .pt-toast-error i { color: #f87171; }
+    .pt-toast-info i { color: #60a5fa; }
+
+    /* ── Smart Back Button ── */
+    #si-back-btn:hover {
+        background: #eff6ff !important;
+        border-color: #bfdbfe !important;
+        color: #2563eb !important;
+        transform: translateX(-2px);
+    }
+    #si-back-btn.back-to-portfolio {
+        background: linear-gradient(135deg, #eff6ff, #eef2ff) !important;
+        border-color: #bfdbfe !important;
+        color: #2563eb !important;
+        font-weight: 700 !important;
+    }
+    #si-back-btn.back-to-portfolio i { color: #4f46e5; }
+    #si-back-btn { transition: all 0.18s ease !important; }
+
+    /* ══════════════════════════════════════════════════════
+       Portfolio Identity Screen
+       ══════════════════════════════════════════════════════ */
+    .pt-identity-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+        min-height: 420px;
+        animation: ptFadeUp 0.4s ease;
+    }
+    .pt-identity-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 20px;
+        padding: 36px 32px 28px;
+        max-width: 420px;
+        width: 100%;
+        box-shadow: 0 8px 32px rgba(37,99,235,0.1);
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    .pt-identity-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #2563eb, #7c3aed, #06b6d4);
+        background-size: 200%;
+        animation: ptShimmer 3s linear infinite;
+    }
+    .pt-identity-icon {
+        font-size: 3rem;
+        color: #2563eb;
+        margin-bottom: 14px;
+        background: linear-gradient(135deg, #eff6ff, #eef2ff);
+        width: 72px; height: 72px;
+        border-radius: 20px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 14px rgba(37,99,235,0.15);
+    }
+    .pt-identity-icon i { font-size: 1.9rem; }
+    .pt-identity-title {
+        font-size: 1.15rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 10px;
+    }
+    .pt-identity-sub {
+        font-size: 13px;
+        color: #64748b;
+        line-height: 1.7;
+        margin-bottom: 24px;
+    }
+    .pt-identity-input-wrap {
+        position: relative;
+        margin-bottom: 8px;
+    }
+    .pt-identity-at {
+        position: absolute;
+        left: 14px; top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        font-size: 14px;
+        pointer-events: none;
+    }
+    .pt-identity-input {
+        width: 100%;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 12px 16px 12px 38px;
+        font-size: 15px;
+        font-weight: 600;
+        color: #0f172a;
+        font-family: inherit;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        background: #f8fafc;
+        letter-spacing: 0.3px;
+        box-sizing: border-box;
+    }
+    .pt-identity-input:focus {
+        border-color: #2563eb;
+        background: #fff;
+        box-shadow: 0 0 0 4px rgba(37,99,235,0.1);
+    }
+    .pt-identity-hint {
+        font-size: 11px;
+        color: #94a3b8;
+        margin-bottom: 6px;
+        text-align: left;
+        padding-left: 2px;
+    }
+    .pt-identity-err {
+        font-size: 12px;
+        color: #dc2626;
+        min-height: 18px;
+        margin-bottom: 12px;
+        text-align: left;
+        padding-left: 2px;
+    }
+    .pt-identity-btn {
+        width: 100%;
+        background: linear-gradient(135deg, #2563eb, #4f46e5);
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        padding: 13px 24px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        font-family: inherit;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 4px 14px rgba(37,99,235,0.35);
+        transition: transform 0.18s cubic-bezier(.34,1.56,.64,1), box-shadow 0.18s ease;
+        margin-bottom: 16px;
+    }
+    .pt-identity-btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(37,99,235,0.45);
+    }
+    .pt-identity-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+    .pt-identity-note {
+        font-size: 11px;
+        color: #94a3b8;
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+        text-align: left;
+        line-height: 1.5;
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 10px 12px;
+    }
+    .pt-identity-note i { color: #2563eb; margin-top: 1px; flex-shrink: 0; }
+
+    /* ── Username Badge in Header ── */
+    .pt-user-badge {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 20px;
+        padding: 5px 12px 5px 10px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #2563eb;
+    }
+    .pt-user-badge i { font-size: 13px; }
+    .pt-switch-btn {
+        background: none;
+        border: none;
+        color: #94a3b8;
+        cursor: pointer;
+        padding: 2px 4px;
+        border-radius: 4px;
+        font-size: 11px;
+        transition: color 0.15s;
+        margin-left: 2px;
+    }
+    .pt-switch-btn:hover { color: #dc2626; }
+    
+    </style>
 </head>
 <body>
 <div class="container-fluid h-100">
 <div class="row h-100">
 
 <!-- SIDEBAR -->
+<style>
+.sb-label {
+    font-size: 0.67rem; font-weight: 800; letter-spacing: 0.09em;
+    color: var(--text-2, #94a3b8); text-transform: uppercase;
+    padding: 14px 16px 4px; display: block;
+}
+.sb-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 11px; margin: 1px 8px;
+    border-radius: 9px; cursor: pointer;
+    border: none; background: transparent;
+    width: calc(100% - 16px); text-align: left;
+    font-size: 0.875rem; color: var(--text, #1e293b);
+    transition: background 0.15s, color 0.15s;
+    position: relative;
+}
+.sb-item:hover { background: var(--bg-input, #f1f5f9); }
+.sb-item.active { font-weight: 600; }
+.sb-item.active::before {
+    content: ''; position: absolute; left: 0; top: 18%; bottom: 18%;
+    width: 3px; border-radius: 2px; background: currentColor;
+}
+.sb-icon {
+    width: 28px; height: 28px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.78rem; flex-shrink: 0; transition: transform 0.18s;
+}
+.sb-item:hover .sb-icon { transform: scale(1.1); }
+.sb-sep { height: 1px; background: var(--border, #e2e8f0); margin: 5px 14px; }
+
+.sb-markets .sb-icon { background: rgba(5,150,105,0.1); color: #059669; }
+.sb-markets:hover    { background: rgba(5,150,105,0.06) !important; }
+.sb-markets.active   { color: #059669; background: rgba(5,150,105,0.09) !important; }
+
+.sb-calc .sb-icon { background: rgba(245,158,11,0.1); color: #d97706; }
+.sb-calc:hover    { background: rgba(245,158,11,0.06) !important; }
+.sb-calc.active   { color: #d97706; background: rgba(245,158,11,0.09) !important; }
+
+.sb-mkt .sb-icon { background: rgba(14,165,233,0.1); color: #0ea5e9; }
+.sb-mkt:hover    { background: rgba(14,165,233,0.06) !important; }
+.sb-mkt.active   { color: #0ea5e9; background: rgba(14,165,233,0.09) !important; }
+
+.sb-learn .sb-icon { background: rgba(139,92,246,0.1); color: #7c3aed; }
+.sb-learn:hover    { background: rgba(139,92,246,0.06) !important; }
+.sb-learn.active   { color: #7c3aed; background: rgba(139,92,246,0.09) !important; }
+
+.sb-home .sb-icon  { background: rgba(15,23,42,0.06); color: #64748b; }
+.sb-home:hover     { background: rgba(37,99,235,0.05) !important; }
+.sb-home.active    { color: var(--accent,#2563eb); background: var(--accent-light,#eff6ff) !important; }
+
+.sb-chat .sb-icon  { background: rgba(124,58,237,0.12); color: #7c3aed; }
+.sb-chat           { color: #6d28d9 !important; font-weight: 600; }
+.sb-chat:hover     { background: rgba(124,58,237,0.07) !important; }
+.sb-chat.active    { background: rgba(124,58,237,0.12) !important; color: #7c3aed !important; }
+</style>
+
 <div class="col-md-3 menu-sidebar">
     <div class="sidebar-brand">
         <div class="brand-icon"><i class="fas fa-chart-pie"></i></div>
@@ -25,73 +663,85 @@
             <span class="brand-sub">Virtual Finance Assistant</span>
         </div>
     </div>
-    <div class="sidebar-section">
-        <button class="menu-btn home-btn" onclick="goHome()">
-            <div class="btn-icon"><i class="fas fa-home"></i></div>
-            <span>Home</span>
+
+    <div style="padding:6px 0 2px;">
+        <button class="sb-item sb-home" id="sb-home-btn" onclick="goHome(); setSbActive(this)">
+            <div class="sb-icon"><i class="fas fa-home"></i></div><span>Home</span>
         </button>
     </div>
-    <div class="sidebar-divider"><span>TOOLS</span></div>
-    <div class="menu-categories">
-        <button class="menu-btn" onclick="showForm('stock')">
-            <div class="btn-icon"><i class="fas fa-chart-line"></i></div>
-            <span>Stock Information</span>
-        </button>
-        <button class="menu-btn" onclick="showForm('emi')">
-            <div class="btn-icon"><i class="fas fa-building"></i></div>
-            <span>EMI Calculator</span>
-        </button>
-        <button class="menu-btn" onclick="showForm('sip')">
-            <div class="btn-icon"><i class="fas fa-coins"></i></div>
-            <span>SIP Calculator</span>
-        </button>
-        <button class="menu-btn" onclick="showForm('stepsip')">
-            <div class="btn-icon"><i class="fas fa-chart-line"></i></div>
-            <span>Step-up SIP</span>
-        </button>
-        <button class="menu-btn" onclick="showForm('fd')">
-            <div class="btn-icon"><i class="fas fa-piggy-bank"></i></div>
-            <span>Fixed Deposit</span>
-        </button>
-        <button class="menu-btn" onclick="showForm('mf')">
-            <div class="btn-icon"><i class="fas fa-layer-group"></i></div>
-            <span>Mutual Funds</span>
-        </button>
-        <button class="menu-btn" onclick="showForm('zakat')">
-            <div class="btn-icon"><i class="fas fa-star-and-crescent"></i></div>
-            <span>Zakat Calculator</span>
+
+    <div class="sb-sep"></div>
+
+    <div style="padding:3px 0;">
+        <button class="sb-item sb-chat" onclick="showForm('chat'); setSbActive(this)">
+            <div class="sb-icon"><i class="fas fa-comments"></i></div><span>AI Chat Mode</span>
         </button>
     </div>
-    <div class="sidebar-divider"><span>LEARN</span></div>
-    <div class="menu-categories">
-        <button class="menu-btn" onclick="showForm('glossary')">
-            <div class="btn-icon"><i class="fas fa-book-open"></i></div>
-            <span>Finance Glossary</span>
-        </button>
-    </div>
-    <div class="sidebar-divider"><span>CHAT</span></div>
-    <div class="menu-categories">
-        <button class="menu-btn chat-mode-btn" onclick="showForm('chat')">
-            <div class="btn-icon"><i class="fas fa-comments"></i></div>
-            <span>Chat Mode</span>
-        </button>
-    </div>
-    <div class="sidebar-divider"><span>MARKET</span></div>
-    <div class="menu-categories">
-        <button class="menu-btn" onclick="showForm('news')">
-            <div class="btn-icon"><i class="fas fa-newspaper"></i></div>
-            <span>Market News</span>
-        </button>
-        <button class="menu-btn" onclick="showForm('currency')">
-            <div class="btn-icon"><i class="fas fa-exchange-alt"></i></div>
-            <span>Currency Rates</span>
-        </button>
-        <button class="menu-btn" onclick="showForm('metals')">
-            <div class="btn-icon"><i class="fas fa-gem"></i></div>
-            <span>Gold &amp; Silver</span>
-        </button>
-    </div>
+
+    <div class="sb-sep"></div>
+
+    <span class="sb-label">Markets &amp; Portfolio</span>
+    <button class="sb-item sb-markets" onclick="showForm('stock'); setSbActive(this)">
+        <div class="sb-icon"><i class="fas fa-chart-bar"></i></div><span>Stock Information</span>
+    </button>
+    <button class="sb-item sb-markets" onclick="showForm('portfolio'); setSbActive(this)">
+        <div class="sb-icon"><i class="fas fa-briefcase"></i></div><span>My Portfolio</span>
+    </button>
+    <button class="sb-item sb-markets" onclick="showForm('mf'); setSbActive(this)">
+        <div class="sb-icon"><i class="fas fa-layer-group"></i></div><span>Mutual Funds</span>
+    </button>
+
+    <div class="sb-sep"></div>
+
+    <span class="sb-label">Calculators</span>
+    <button class="sb-item sb-calc" onclick="showForm('emi'); setSbActive(this)">
+        <div class="sb-icon"><i class="fas fa-home"></i></div><span>EMI Calculator</span>
+    </button>
+    <button class="sb-item sb-calc" onclick="showForm('sip'); setSbActive(this)">
+        <div class="sb-icon"><i class="fas fa-coins"></i></div><span>SIP Calculator</span>
+    </button>
+    <button class="sb-item sb-calc" onclick="showForm('stepsip'); setSbActive(this)">
+        <div class="sb-icon"><i class="fas fa-chart-line"></i></div><span>Step-up SIP</span>
+    </button>
+    <button class="sb-item sb-calc" onclick="showForm('fd'); setSbActive(this)">
+        <div class="sb-icon"><i class="fas fa-piggy-bank"></i></div><span>Fixed Deposit</span>
+    </button>
+    <button class="sb-item sb-calc" onclick="showForm('zakat'); setSbActive(this)">
+        <div class="sb-icon"><i class="fas fa-star-and-crescent"></i></div><span>Zakat Calculator</span>
+    </button>
+
+    <div class="sb-sep"></div>
+
+    <span class="sb-label">Market Data</span>
+    <button class="sb-item sb-mkt" onclick="showForm('news'); setSbActive(this)">
+        <div class="sb-icon"><i class="fas fa-newspaper"></i></div><span>Market News</span>
+    </button>
+    <button class="sb-item sb-mkt" onclick="showForm('currency'); setSbActive(this)">
+        <div class="sb-icon"><i class="fas fa-exchange-alt"></i></div><span>Currency Rates</span>
+    </button>
+    <button class="sb-item sb-mkt" onclick="showForm('metals'); setSbActive(this)">
+        <div class="sb-icon"><i class="fas fa-gem"></i></div><span>Gold &amp; Silver</span>
+    </button>
+
+    <div class="sb-sep"></div>
+
+    <span class="sb-label">Learn</span>
+    <button class="sb-item sb-learn" onclick="showForm('glossary'); setSbActive(this)">
+        <div class="sb-icon"><i class="fas fa-book-open"></i></div><span>Finance Glossary</span>
+    </button>
 </div>
+
+<script>
+function setSbActive(btn) {
+    document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+}
+// Mark Home active on load
+document.addEventListener('DOMContentLoaded', function(){
+    var h = document.getElementById('sb-home-btn');
+    if(h) h.classList.add('active');
+});
+</script>
 
 <!-- MAIN CONTENT -->
 <div class="col-md-9 main-content">
@@ -120,12 +770,183 @@
     </div>
 
     <!-- HOME SCREEN -->
+    <style>
+    /* ── Hero Animations ─────────────────────────────── */
+    @keyframes heroFadeUp   { from { opacity:0; transform:translateY(28px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes heroScale    { from { opacity:0; transform:scale(0.7); } to { opacity:1; transform:scale(1); } }
+    @keyframes orbitA       { from { transform:rotate(0deg)   translateX(54px) rotate(0deg);   } to { transform:rotate(360deg) translateX(54px) rotate(-360deg); } }
+    @keyframes orbitB       { from { transform:rotate(120deg) translateX(54px) rotate(-120deg);} to { transform:rotate(480deg) translateX(54px) rotate(-480deg);} }
+    @keyframes orbitC       { from { transform:rotate(240deg) translateX(54px) rotate(-240deg);} to { transform:rotate(600deg) translateX(54px) rotate(-600deg);} }
+    @keyframes pulse        { 0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(37,99,235,0.25);} 50%{transform:scale(1.07);box-shadow:0 0 0 14px rgba(37,99,235,0);} }
+    @keyframes countUp      { from{opacity:0;transform:translateY(12px);} to{opacity:1;transform:translateY(0);} }
+    @keyframes shimmer      { 0%{background-position:-200% center;} 100%{background-position:200% center;} }
+    @keyframes float        { 0%,100%{transform:translateY(0px);} 50%{transform:translateY(-8px);} }
+    @keyframes gradShift    { 0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;} }
+    @keyframes cardIn       { from{opacity:0;transform:translateY(20px);} to{opacity:1;transform:translateY(0);} }
+
+    .home-hero-v2 {
+        position: relative;
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 40%, #1e1b4b 100%);
+        background-size: 300% 300%;
+        animation: gradShift 8s ease infinite;
+        border-radius: 20px;
+        padding: 48px 40px 40px;
+        margin-bottom: 28px;
+        overflow: hidden;
+        display: flex; align-items: center; gap: 40px;
+    }
+    .home-hero-v2::before {
+        content:''; position:absolute; inset:0;
+        background: radial-gradient(ellipse at 70% 50%, rgba(99,102,241,0.18) 0%, transparent 60%),
+                    radial-gradient(ellipse at 20% 80%, rgba(37,99,235,0.15) 0%, transparent 50%);
+        pointer-events:none;
+    }
+    /* Animated grid lines */
+    .home-hero-v2::after {
+        content:''; position:absolute; inset:0; pointer-events:none;
+        background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                          linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+    }
+
+    /* Orbit icon cluster */
+    .hero-icon-cluster {
+        position:relative; width:130px; height:130px; flex-shrink:0;
+        display:flex; align-items:center; justify-content:center;
+        animation: float 4s ease-in-out infinite;
+        z-index:2;
+    }
+    .hero-center-icon {
+        width:72px; height:72px; background:linear-gradient(135deg,#2563eb,#7c3aed);
+        border-radius:20px; display:flex; align-items:center; justify-content:center;
+        font-size:1.8rem; color:#fff; animation:pulse 3s ease-in-out infinite;
+        box-shadow: 0 8px 32px rgba(37,99,235,0.4);
+        z-index:3; position:relative;
+    }
+    .orbit-dot {
+        position:absolute; top:50%; left:50%;
+        width:28px; height:28px; border-radius:9px;
+        display:flex; align-items:center; justify-content:center;
+        font-size:0.75rem; color:#fff;
+        margin:-14px 0 0 -14px;
+    }
+    .orbit-dot:nth-child(2){ background:rgba(16,185,129,0.9); animation:orbitA 5s linear infinite; }
+    .orbit-dot:nth-child(3){ background:rgba(245,158,11,0.9);  animation:orbitB 5s linear infinite; }
+    .orbit-dot:nth-child(4){ background:rgba(239,68,68,0.9);   animation:orbitC 5s linear infinite; }
+
+    /* Text side */
+    .hero-text { flex:1; z-index:2; position:relative; }
+    .hero-badge {
+        display:inline-flex; align-items:center; gap:6px;
+        background:rgba(99,102,241,0.2); border:1px solid rgba(99,102,241,0.4);
+        color:#a5b4fc; border-radius:20px; padding:4px 12px;
+        font-size:0.72rem; font-weight:700; letter-spacing:0.06em;
+        text-transform:uppercase; margin-bottom:14px;
+        animation: heroFadeUp 0.5s ease both;
+    }
+    .hero-badge i { font-size:0.65rem; }
+    .hero-title {
+        font-size:2rem; font-weight:800; color:#fff; line-height:1.2;
+        margin:0 0 12px; letter-spacing:-0.02em;
+        animation: heroFadeUp 0.6s ease 0.1s both;
+        background: linear-gradient(90deg, #fff 0%, #a5b4fc 60%, #60a5fa 100%);
+        background-size: 200% auto;
+        -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+        background-clip:text;
+        animation: heroFadeUp 0.6s ease 0.1s both, shimmer 4s linear 0.7s infinite;
+    }
+    .hero-sub {
+        font-size:0.95rem; color:rgba(255,255,255,0.6); margin:0 0 24px; line-height:1.6;
+        animation: heroFadeUp 0.6s ease 0.2s both;
+    }
+    /* Stat pills */
+    .hero-stats {
+        display:flex; gap:12px; flex-wrap:wrap;
+        animation: heroFadeUp 0.6s ease 0.3s both;
+    }
+    .hero-stat {
+        background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12);
+        border-radius:12px; padding:10px 16px; text-align:center;
+        backdrop-filter:blur(8px);
+        transition: background 0.2s, transform 0.2s;
+        cursor:default;
+    }
+    .hero-stat:hover { background:rgba(255,255,255,0.14); transform:translateY(-2px); }
+    .hero-stat-val {
+        font-size:1.2rem; font-weight:800; color:#fff; display:block;
+        font-variant-numeric: tabular-nums;
+    }
+    .hero-stat-lbl { font-size:0.68rem; color:rgba(255,255,255,0.5); font-weight:600; text-transform:uppercase; letter-spacing:0.05em; }
+
+    /* Quick-action chips */
+    .hero-chips {
+        display:flex; gap:8px; flex-wrap:wrap; margin-top:18px;
+        animation: heroFadeUp 0.6s ease 0.4s both;
+    }
+    .hero-chip {
+        display:inline-flex; align-items:center; gap:6px;
+        background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15);
+        border-radius:20px; padding:6px 14px;
+        color:rgba(255,255,255,0.85); font-size:0.8rem; font-weight:600;
+        cursor:pointer; transition:all 0.2s;
+    }
+    .hero-chip:hover { background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.3); transform:translateY(-1px); }
+    .hero-chip i { font-size:0.72rem; }
+
+    /* Feature cards animation */
+    .feature-card { animation: cardIn 0.5s ease both; }
+    .feature-card:nth-child(1){ animation-delay:0.05s; }
+    .feature-card:nth-child(2){ animation-delay:0.1s; }
+    .feature-card:nth-child(3){ animation-delay:0.15s; }
+    .feature-card:nth-child(4){ animation-delay:0.2s; }
+    .feature-card:nth-child(5){ animation-delay:0.25s; }
+    </style>
+
     <div class="card-body" id="welcomeScreen">
         <div class="home-page">
-            <div class="home-hero">
-                <div class="home-hero-icon"><i class="fas fa-chart-pie"></i></div>
-                <h1>Virtual Finance Assistant</h1>
-                <p>Your all-in-one tool for smart financial decisions. Explore the features below.</p>
+            <!-- ── Animated Hero ─────────────────────────────── -->
+            <div class="home-hero-v2">
+                <!-- Orbit icon cluster -->
+                <div class="hero-icon-cluster">
+                    <div class="hero-center-icon"><i class="fas fa-chart-pie"></i></div>
+                    <div class="orbit-dot"><i class="fas fa-chart-line"></i></div>
+                    <div class="orbit-dot"><i class="fas fa-coins"></i></div>
+                    <div class="orbit-dot"><i class="fas fa-piggy-bank"></i></div>
+                </div>
+
+                <!-- Text content -->
+                <div class="hero-text">
+                    <div class="hero-badge"><i class="fas fa-bolt"></i> AI Powered · NSE · NASDAQ · NYSE</div>
+                    <div class="hero-title">Virtual Finance Assistant</div>
+                    <p class="hero-sub">Your all-in-one platform for NSE Indian stocks, US stocks (NASDAQ/NYSE), SIP, EMI, mutual funds &amp; more.</p>
+
+                    <div class="hero-stats">
+                        <div class="hero-stat">
+                            <span class="hero-stat-val">500+</span>
+                            <span class="hero-stat-lbl">Indian Stocks</span>
+                        </div>
+                        <div class="hero-stat">
+                            <span class="hero-stat-val">10+</span>
+                            <span class="hero-stat-lbl">US Stocks</span>
+                        </div>
+                        <div class="hero-stat">
+                            <span class="hero-stat-val">Live</span>
+                            <span class="hero-stat-lbl">NSE · NYSE</span>
+                        </div>
+                        <div class="hero-stat">
+                            <span class="hero-stat-val">AI</span>
+                            <span class="hero-stat-lbl">Chat Ready</span>
+                        </div>
+                    </div>
+
+                    <div class="hero-chips">
+                        <span class="hero-chip" onclick="showForm('chat')"><i class="fas fa-comments"></i> Ask AI</span>
+                        <span class="hero-chip" onclick="showForm('stock')"><i class="fas fa-chart-bar"></i> Live Stocks</span>
+                        <span class="hero-chip" onclick="showForm('sip')"><i class="fas fa-coins"></i> SIP Calculator</span>
+                        <span class="hero-chip" onclick="showForm('news')"><i class="fas fa-newspaper"></i> Market News</span>
+                        <span class="hero-chip" onclick="showForm('emi')"><i class="fas fa-home"></i> EMI Calculator</span>
+                    </div>
+                </div>
             </div>
 
             <!-- 5 cards: 2x2 grid + Chat spanning right column both rows -->
@@ -389,6 +1210,81 @@
     <!-- RESULTS -->
     <div id="resultsContainer" class="results-container" style="display:none;">
         <div id="resultsContent"></div>
+    </div>
+
+    <!-- FINNHUB STOCK DASHBOARD PANEL -->
+    <div id="stockDashboardPanel" style="display:none; padding:16px 24px 24px; overflow-y:auto; height:100%;">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px; flex-wrap:wrap;">
+            <button id="si-back-btn" onclick="siGoBack()" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:7px 14px;color:#475569;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;transition:all 0.15s;">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+            <div style="flex:1;position:relative;min-width:0;">
+                <div class="fh-search-wrap" style="margin-bottom:0;">
+                    <input type="text" id="fh-search-input" placeholder="Search stock: Reliance, HDFC Bank, Delhivery, Apple…" autocomplete="off"/>
+                    <button id="fh-search-btn"><i class="fas fa-magnifying-glass"></i></button>
+                </div>
+                <div id="fh-search-dropdown" style="
+                    display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;
+                    background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;
+                    box-shadow:0 8px 24px rgba(0,0,0,0.10);z-index:9999;
+                    max-height:260px;overflow-y:auto;">
+                </div>
+            </div>
+        </div>
+        <div id="stock-dashboard"></div>
+    </div>
+
+    <!-- PORTFOLIO PANEL -->
+    <div id="portfolioPanel" style="display:none;flex-direction:column;height:100%;overflow:hidden;background:#f8fafc;">
+        <div class="pt-panel-header">
+            <div class="pt-panel-title">
+                <div class="pt-title-icon"><i class="fas fa-chart-pie"></i></div>
+                My Portfolio
+            </div>
+            <div class="pt-header-actions">
+                <div id="pt-user-badge" class="pt-user-badge" style="display:none;"></div>
+                <span class="pt-live-badge"><span class="pt-live-dot"></span> LIVE · 30s refresh</span>
+                <button id="pt-add-btn" class="pt-btn pt-btn-primary" style="display:none;" onclick="FinTracker.openAddHolding()">
+                    <i class="fas fa-plus"></i> Add Holding
+                </button>
+            </div>
+        </div>
+        <div id="pt-summary-bar" style="padding:12px 24px 0;flex-shrink:0;"></div>
+        <div class="pt-scroll-area">
+            <div id="pt-content"></div>
+        </div>
+    </div>
+
+    <!-- WATCHLIST PANEL — removed -->
+    <div id="watchlistPanel" style="display:none !important;"></div>
+
+    <!-- ADD HOLDING MODAL -->
+    <div class="pt-modal-overlay" id="pt-modal" onclick="if(event.target===this)FinTracker.closeModal()">
+        <div class="pt-modal-box">
+            <div class="pt-modal-title"><i class="fas fa-plus-circle"></i> Add / Update Holding</div>
+            <div class="pt-field">
+                <label>Stock Symbol</label>
+                <input type="text" id="pt-modal-sym" placeholder="e.g. RELIANCE, INFY, AAPL"
+                       onkeydown="if(event.key==='Enter')document.getElementById('pt-modal-qty').focus()">
+            </div>
+            <div class="pt-field">
+                <label>Quantity (shares)</label>
+                <input type="number" id="pt-modal-qty" placeholder="e.g. 10" min="0.001" step="any"
+                       onkeydown="if(event.key==='Enter')document.getElementById('pt-modal-avg').focus()">
+            </div>
+            <div class="pt-field">
+                <label>Average Buy Price (₹ or $)</label>
+                <input type="number" id="pt-modal-avg" placeholder="e.g. 1450.50" min="0.01" step="any"
+                       onkeydown="if(event.key==='Enter')FinTracker.saveHolding()">
+            </div>
+            <div class="pt-modal-err" id="pt-modal-err"></div>
+            <div class="pt-modal-actions">
+                <button class="pt-btn pt-btn-ghost" onclick="FinTracker.closeModal()">Cancel</button>
+                <button class="pt-btn pt-btn-primary" onclick="FinTracker.saveHolding()">
+                    <i class="fas fa-check"></i> Save
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- FORMS -->
@@ -839,7 +1735,12 @@ function fetchTopTurnover(){
 }
 function refreshMarketWidgets(){ fetchTopGainers();fetchTopLosers();fetchTopVolume();fetchTopTurnover(); }
 
-function showForm(formType){
+// Smart back navigation (overridden by portfolio_watchlist.js if loaded)
+    window.siGoBack = window.siGoBack || function() {
+        if(typeof showForm === 'function') showForm('stock');
+    };
+
+    function showForm(formType){
     $('.input-form').hide();
     $('#formsContainer').hide();
     $('#resultsContainer').hide();
@@ -851,24 +1752,30 @@ function showForm(formType){
     $('#mfPanel').hide();
     $('#glossaryPanel').hide();
     $('#mfCatBar').hide();
-    $('#chatFooter').hide(); // Ensures it starts hidden
+    $('#chatFooter').hide();
+    $('#stockDashboardPanel').hide();
+    $('#portfolioPanel').hide();
+    $('#watchlistPanel').hide();
+    if(typeof StockDashboard !== 'undefined') StockDashboard.stopAutoRefresh();
+    if(typeof FinTracker !== 'undefined'){ FinTracker.stopPortfolioRefresh(); FinTracker.stopWatchlistRefresh(); }
     $('.menu-btn').removeClass('active');
     
-    // Highlight active menu item
-    $('.menu-btn').each(function(){
-        if(($(this).attr('onclick')||'').includes("'"+formType+"'")) $(this).addClass('active');
+    // Highlight active sidebar item
+    document.querySelectorAll('.sb-item').forEach(function(b){
+        b.classList.remove('active');
+        var oc = b.getAttribute('onclick') || '';
+        if(oc.includes("'"+formType+"'")) b.classList.add('active');
     });
 
     currentMode=formType;
 
     if(formType==='chat'){
         $('#messageFormeight').css({display:'flex',flexDirection:'column'});
-        $('#chatFooter').show(); // Only show footer in Chat Mode
-        // ... (rest of chat logic) ...
+        $('#chatFooter').show();
     } else if(formType==='stock'){
         $('#formsContainer').show(); 
         $('#stockForm').show(); 
-        $('#chatFooter').hide(); // <--- CRITICAL CHANGE: Hide footer here
+        $('#chatFooter').hide();
     } else if(formType==='news'){
         $('#newsPanel').show();
         loadNews();
@@ -885,10 +1792,15 @@ function showForm(formType){
     } else if(formType==='glossary'){
         $('#glossaryPanel').css('display','flex');
         initGlossary();
+    } else if(formType==='portfolio'){
+        $('#portfolioPanel').css('display','flex');
+        if(typeof FinTracker !== 'undefined') FinTracker.startPortfolioRefresh();
+    } else if(formType==='watchlist'){
+        $('#watchlistPanel').css('display','flex');
+        if(typeof FinTracker !== 'undefined') FinTracker.startWatchlistRefresh();
     } else {
         $('#formsContainer').show(); 
         $('#'+formType+'Form').show();
-        // Footer remains hidden by default
     }
 }
 function goHome(){
@@ -903,8 +1815,15 @@ function goHome(){
     $('#mfPanel').hide();
     $('#glossaryPanel').hide();
     $('#mfCatBar').hide();
+    $('#stockDashboardPanel').hide();
+    $('#portfolioPanel').hide();
+    $('#watchlistPanel').hide();
+    if(typeof StockDashboard !== 'undefined') StockDashboard.stopAutoRefresh();
+    if(typeof FinTracker !== 'undefined'){ FinTracker.stopPortfolioRefresh(); FinTracker.stopWatchlistRefresh(); }
     $('#welcomeScreen').show();
-    $('.menu-btn').removeClass('active');
+    document.querySelectorAll('.sb-item').forEach(function(b){ b.classList.remove('active'); });
+    var h = document.getElementById('sb-home-btn');
+    if(h) h.classList.add('active');
     currentMode='welcome';
     refreshMarketWidgets();
 }
@@ -963,50 +1882,44 @@ function formatResult(data,type){
     return html;
 }
 
-// Stock submit
+// Stock submit — opens Finnhub intelligence dashboard
 function submitStockForm(){
-    const nm=$('#stockName').val();
-    if(!nm){alert('Please select a stock');return;}
-    showResults();
-    $('#resultsContent').html('<div class="sfc-loading"><div class="sfc-spinner"></div><span>Fetching live market data…</span></div>');
-    $.ajax({url:'/get_stock',method:'POST',data:{symbol:nm},timeout:20000})
-    .done(function(d){
-        if(d.error){$('#resultsContent').html('<div class="error-card">❌ '+d.error+'</div>');return;}
-        const now=new Date(), ist=new Date(now.toLocaleString('en-US',{timeZone:'Asia/Kolkata'}));
-        const day=ist.getDay(), mins=ist.getHours()*60+ist.getMinutes();
-        const isOpen=day>=1&&day<=5&&mins>=555&&mins<=930;
-        const bStyle=isOpen?'background:rgba(5,150,105,.15);border:1px solid rgba(5,150,105,.35);color:#059669;':'background:rgba(220,38,38,.12);border:1px solid rgba(220,38,38,.25);color:#dc2626;';
-        const bText=isOpen?'● LIVE':'● Market Closed';
-        const sym=d.symbol||nm,up=(d.change||0)>=0,cc=up?'sfc-up':'sfc-down',ca=up?'▲':'▼';
-        const wu=(d.week_change||0)>=0,wc=wu?'sfc-up':'sfc-down',wa=wu?'▲':'▼';
-        const logo=getStockLogo(sym);
-        const lh=logo?`<img src="${logo}" class="sfc-logo" onerror="this.outerHTML='<div class=sfc-logo-fb><i class=\\'fas fa-chart-bar\\'></i></div>'">`:`<div class="sfc-logo-fb"><i class="fas fa-chart-bar"></i></div>`;
-        const co=getCompanyName(sym);
-        const f=v=>v!=null?'₹'+parseFloat(v).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';
-        const fc=v=>v!=null?(v>=0?'+':'')+parseFloat(v).toFixed(2):'—';
-        $('#resultsContent').html(`<div class="sfc-card">
-            <div class="sfc-head">${lh}<div class="sfc-head-text"><div class="sfc-company">${co}</div><div class="sfc-ticker">${sym} &middot; NSE India</div></div>
-                <div style="${bStyle}font-size:.7rem;font-weight:800;letter-spacing:.1em;padding:4px 12px;border-radius:20px;flex-shrink:0;">${bText}</div>
-            </div>
-            <div class="sfc-hero"><div class="sfc-big-price">${f(d.current)}</div><div class="sfc-chg ${cc}">${ca} ${fc(d.change)} <span class="sfc-pct">(${fc(d.change_pct)}%)</span></div></div>
-            <div class="sfc-section"><div class="sfc-section-hdr"><i class="fas fa-sun"></i> Today</div><div class="sfc-row-grid">
-                <div class="sfc-stat"><div class="sfc-stat-lbl">Open</div><div class="sfc-stat-val">${f(d.open)}</div></div>
-                <div class="sfc-stat"><div class="sfc-stat-lbl">Prev Close</div><div class="sfc-stat-val">${f(d.prev_close)}</div></div>
-                <div class="sfc-stat"><div class="sfc-stat-lbl">Day High</div><div class="sfc-stat-val sfc-up">${f(d.day_high)}</div></div>
-                <div class="sfc-stat"><div class="sfc-stat-lbl">Day Low</div><div class="sfc-stat-val sfc-down">${f(d.day_low)}</div></div>
-            </div></div>
-            <div class="sfc-section sfc-section-weekly"><div class="sfc-section-hdr"><i class="fas fa-calendar-week"></i> This Week</div><div class="sfc-row-grid">
-                <div class="sfc-stat"><div class="sfc-stat-lbl">Week Open</div><div class="sfc-stat-val">${f(d.week_open)}</div></div>
-                <div class="sfc-stat"><div class="sfc-stat-lbl">Week Close</div><div class="sfc-stat-val">${f(d.week_close)}</div></div>
-                <div class="sfc-stat"><div class="sfc-stat-lbl">Week High</div><div class="sfc-stat-val sfc-up">${f(d.week_high)}</div></div>
-                <div class="sfc-stat"><div class="sfc-stat-lbl">Week Low</div><div class="sfc-stat-val sfc-down">${f(d.week_low)}</div></div>
-            </div><div class="sfc-wk-summary ${wc}"><span><i class="fas fa-chart-line"></i> Weekly Change</span><span class="sfc-wk-val">${wa} ${fc(d.week_change)} &nbsp;(${fc(d.week_pct)}%)</span></div></div>
-            <div class="sfc-footer">
-                <button class="btn btn-primary" onclick="submitStockForm()"><i class="fas fa-sync-alt"></i> Refresh</button>
-                <button class="btn btn-secondary" onclick="showForm('stock')"><i class="fas fa-arrow-left"></i> Back</button>
-            </div>
-        </div>`);
-    }).fail(function(_,s){$('#resultsContent').html('<div class="error-card">❌ '+(s==='timeout'?'Request timed out.':'Failed to fetch data.')+'</div>');});
+    const nm = $('#stockName').val().trim();
+    if(!nm){ alert('Please select a stock'); return; }
+
+    // Smart symbol resolver — same logic as StockDashboard.resolveSymbol()
+    const US_TICKERS = new Set([
+        'AAPL','MSFT','GOOGL','GOOG','AMZN','META','TSLA','NVDA','NFLX','AMD',
+        'INTC','JPM','BAC','V','MA','WMT','DIS','UBER','LYFT','SNAP','IBM',
+        'ORCL','CRM','ADBE','NOW','PYPL','SQ','COIN','HOOD','SHOP','SPOT',
+        'ZM','DOCU','PLTR','RBLX','ABNB','DASH','RIVN','LCID','F','GM',
+        'GE','BA','CAT','XOM','CVX','PFE','JNJ','MRK','ABBV','LLY','UNH',
+        'AMGN','GILD','MRNA','BRK.B','BRK.A','GS','MS','C','WFC','AXP',
+        'COF','SCHW','BLK','KO','PEP','MCD','SBUX','NKE','LULU','TGT',
+        'HD','LOW','COST','ETSY','EBAY','AMD','AMC','GME','NOK',
+        'SPY','QQQ','VTI','IWM','GLD','SLV','USO','BABA','JD','NIO','BIDU',
+    ]);
+    let symbol = nm.toUpperCase().trim();
+    if (!symbol.includes('.')) {
+        // Only append .NS if it's NOT a known US ticker
+        if (!US_TICKERS.has(symbol)) {
+            symbol = symbol + '.NS';
+        }
+    }
+
+    // Hide all panels, show dashboard panel
+    $('.input-form').hide();
+    $('#formsContainer').hide();
+    $('#resultsContainer').hide();
+    $('#stockDashboardPanel').show();
+    if(typeof StockDashboard !== 'undefined'){
+        StockDashboard.load(symbol);
+    } else {
+        $('#stockDashboardPanel').hide();
+        $('#formsContainer').show();
+        $('#stockForm').show();
+        alert('Stock dashboard failed to load. Please check that stock_dashboard.js is in your static/ folder and refresh the page.');
+    }
 }
 
 // Calculator submits
@@ -1502,25 +2415,87 @@ const STOCK_MASTER_LIST = [
     {v:"UPL", l:"UPL Ltd.", i:"Nifty Next 50"},
     {v:"MCDOWELL-N", l:"United Spirits Ltd.", i:"Nifty Next 50"},
     {v:"VBL", l:"Varun Beverages Ltd.", i:"Nifty Next 50"},
-    {v:"ZOMATO", l:"Zomato Ltd.", i:"Nifty Next 50"}
+    {v:"ZOMATO", l:"Zomato Ltd.", i:"Nifty Next 50"},
+    {v:"SUZLON", l:"Suzlon Energy Ltd.", i:"NSE"},
+    {v:"IRFC", l:"Indian Railway Finance Corporation Ltd.", i:"NSE"},
+    {v:"IRCTC", l:"Indian Railway Catering & Tourism Corporation Ltd.", i:"NSE"},
+    {v:"HAL", l:"Hindustan Aeronautics Ltd.", i:"NSE"},
+    {v:"NHPC", l:"NHPC Ltd.", i:"NSE"},
+    {v:"RVNL", l:"Rail Vikas Nigam Ltd.", i:"NSE"},
+    {v:"IREDA", l:"Indian Renewable Energy Development Agency Ltd.", i:"NSE"},
+    {v:"SJVN", l:"SJVN Ltd.", i:"NSE"},
+    {v:"CANBK", l:"Canara Bank", i:"NSE"},
+    {v:"PNB", l:"Punjab National Bank", i:"NSE"},
+    {v:"BANKBARODA", l:"Bank of Baroda", i:"NSE"},
+    {v:"IDFCFIRSTB", l:"IDFC First Bank Ltd.", i:"NSE"},
+    {v:"FEDERALBNK", l:"Federal Bank Ltd.", i:"NSE"},
+    {v:"YESBANK", l:"Yes Bank Ltd.", i:"NSE"},
+    {v:"PAYTM", l:"One 97 Communications Ltd. (Paytm)", i:"NSE"},
+    {v:"NYKAA", l:"FSN E-Commerce Ventures Ltd. (Nykaa)", i:"NSE"},
+    {v:"DELHIVERY", l:"Delhivery Ltd.", i:"NSE"},
+    {v:"TATACHEM", l:"Tata Chemicals Ltd.", i:"NSE"},
+    {v:"TATACOMM", l:"Tata Communications Ltd.", i:"NSE"},
+    {v:"TATAELXSI", l:"Tata Elxsi Ltd.", i:"NSE"},
+    {v:"DIXON", l:"Dixon Technologies (India) Ltd.", i:"NSE"},
+    {v:"HAVELLS", l:"Havells India Ltd.", i:"NSE"},
+    {v:"VOLTAS", l:"Voltas Ltd.", i:"NSE"},
+    {v:"GODREJPROP", l:"Godrej Properties Ltd.", i:"NSE"},
+    {v:"DLF", l:"DLF Ltd.", i:"NSE"},
+    {v:"PAGEIND", l:"Page Industries Ltd.", i:"NSE"},
+    {v:"DMART", l:"Avenue Supermarts Ltd. (DMart)", i:"NSE"},
+    {v:"JUBLFOOD", l:"Jubilant Foodworks Ltd.", i:"NSE"},
+    {v:"ZYDUSLIFE", l:"Zydus Lifesciences Ltd.", i:"NSE"},
+    {v:"LUPIN", l:"Lupin Ltd.", i:"NSE"},
+    {v:"AUROPHARMA", l:"Aurobindo Pharma Ltd.", i:"NSE"},
+    {v:"LALPATHLAB", l:"Dr Lal PathLabs Ltd.", i:"NSE"},
+    {v:"AAPL", l:"Apple Inc.", i:"NASDAQ"},
+    {v:"MSFT", l:"Microsoft Corporation", i:"NASDAQ"},
+    {v:"GOOGL", l:"Alphabet Inc. (Google)", i:"NASDAQ"},
+    {v:"AMZN", l:"Amazon.com Inc.", i:"NASDAQ"},
+    {v:"META", l:"Meta Platforms Inc. (Facebook)", i:"NASDAQ"},
+    {v:"TSLA", l:"Tesla Inc.", i:"NASDAQ"},
+    {v:"NVDA", l:"NVIDIA Corporation", i:"NASDAQ"},
+    {v:"NFLX", l:"Netflix Inc.", i:"NASDAQ"},
+    {v:"JPM", l:"JPMorgan Chase & Co.", i:"NYSE"},
+    {v:"BAC", l:"Bank of America Corporation", i:"NYSE"}
 ];
+
+// ── Fuzzy search helper ────────────────────────────────────────────
+function fuzzyScore(str, query) {
+    str = str.toLowerCase();
+    query = query.toLowerCase().trim();
+    if (!query) return 0;
+    if (str === query) return 100;
+    if (str.startsWith(query)) return 90;
+    if (str.includes(query)) return 70;
+    let si = 0, qi = 0, score = 0;
+    while (si < str.length && qi < query.length) {
+        if (str[si] === query[qi]) { score++; qi++; }
+        si++;
+    }
+    return qi === query.length ? Math.round(50 * score / query.length) : 0;
+}
+
 $(document).ready(function(){
     const $input    = $('#stockName');
     const $dropdown = $('#customStockDropdown');
 
-    // ── 1. Filter and show dropdown on typing ────────────────────────────────
+    // ── 1. Fuzzy filter on typing ────────────────────────────────────────────
     $input.on('input focus', function(){
-        const val = $(this).val().toLowerCase().trim();
+        const val = $(this).val().trim();
         if(!val){ $dropdown.hide(); return; }
 
-        const matches = STOCK_MASTER_LIST.filter(s =>
-            s.l.toLowerCase().includes(val) ||
-            s.v.toLowerCase().includes(val)  ||
-            (s.i && s.i.toLowerCase().includes(val))
-        ).slice(0, 15); // show up to 15 results
+        const scored = STOCK_MASTER_LIST.map(s => {
+            const score = Math.max(
+                fuzzyScore(s.v, val),
+                fuzzyScore(s.l, val),
+                s.i ? fuzzyScore(s.i, val) * 0.3 : 0
+            );
+            return { s, score };
+        }).filter(x => x.score > 0).sort((a,b) => b.score - a.score).slice(0, 15);
 
-        if(matches.length > 0){
-            const html = matches.map(s => {
+        if(scored.length > 0){
+            const html = scored.map(({s}) => {
                 const badge = s.i ? `<span class="d-index">${s.i}</span>` : '';
                 return `<div class="dropdown-item" data-ticker="${s.v}">
                     <span class="d-name">${s.l}</span>
@@ -1530,7 +2505,10 @@ $(document).ready(function(){
             }).join('');
             $dropdown.html(html).show();
         } else {
-            $dropdown.hide();
+            $dropdown.html(`<div class="dropdown-item" data-ticker="${val.toUpperCase()}">
+                <span class="d-name" style="color:#64748b;font-style:italic;">Search for "${val.toUpperCase()}.NS" on NSE</span>
+                <span class="d-code">${val.toUpperCase()}</span>
+            </div>`).show();
         }
     });
 
@@ -2415,5 +3393,7 @@ function submitZakat() {
 }
 
 </script>
+<script src="{{ url_for('static', filename='stock_dashboard.js') }}"></script>
+<script src="{{ url_for('static', filename='portfolio_watchlist.js') }}"></script>
 </body>
 </html>
