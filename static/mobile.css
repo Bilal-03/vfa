@@ -519,3 +519,322 @@
   background: #f1f5f9;
   margin: 4px 16px;
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BUG FIXES — Mobile only
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+
+/* ── FIX 1: Home page blank on return ────────────────────────────────────
+   welcomeScreen sits inside .card-body which has overflow-y:auto on desktop.
+   On mobile the card-body flex chain collapses. Force it to fill properly. */
+  #welcomeScreen {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: 100%;
+    height: auto !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    background: var(--bg, #f0f2f7) !important;
+  }
+
+  /* Ensure card-body is actually a scrollable container on mobile */
+  .card-body {
+    display: block !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    height: auto !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+  }
+
+  /* formsContainer also needs to scroll properly */
+  .forms-container {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    height: auto !important;
+    padding-bottom: 80px !important;
+  }
+
+
+/* ── FIX 2: Stock search dropdown arrow overlapping text ─────────────────
+   The native select arrow or a pseudo-element is sitting on top of the
+   input text. Remove any right-side padding collision and clip the arrow. */
+  .search-wrapper {
+    position: relative !important;
+    width: 100% !important;
+  }
+
+  #stockName.form-control {
+    padding-right: 14px !important;   /* no extra padding for fake arrow */
+    font-size: 0.88rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    /* Remove browser select appearance if it was accidentally styled as one */
+    -webkit-appearance: none !important;
+    appearance: none !important;
+  }
+
+  /* Hide any stray dropdown arrow pseudo-elements inside search-wrapper */
+  .search-wrapper::after {
+    display: none !important;
+  }
+
+
+/* ── FIX 3: Stock search text clipped / need to swipe ────────────────────
+   Reduce font, loosen layout so full placeholder/typed text is visible. */
+  #stockForm {
+    padding: 20px 16px !important;
+  }
+
+  #stockForm .form-group {
+    margin-bottom: 16px !important;
+  }
+
+  #stockForm label {
+    font-size: 0.72rem !important;
+    letter-spacing: 0.05em !important;
+  }
+
+  #stockName.form-control {
+    font-size: 0.88rem !important;
+    padding: 11px 12px !important;
+    height: auto !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  /* Dropdown items — shrink font, allow text to wrap nicely */
+  .custom-dropdown {
+    max-height: 220px !important;
+    border-radius: 0 0 12px 12px !important;
+    z-index: 9000 !important;        /* above everything */
+  }
+
+  .dropdown-item {
+    padding: 11px 14px !important;
+    gap: 8px !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+  }
+
+  .d-name {
+    font-size: 0.8rem !important;
+    white-space: normal !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+  }
+
+  .d-code {
+    font-size: 0.68rem !important;
+    padding: 3px 6px !important;
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+  }
+
+  /* Nifty badge that was getting cut off (Image 1) */
+  .dropdown-item .d-exch {
+    font-size: 0.65rem !important;
+    flex-shrink: 0 !important;
+  }
+
+
+/* ── FIX 4: Top Gainers/Losers/Volume/Value — horizontal scroll cards ────
+   On mobile replace 4-column grid with a single horizontally scrollable
+   tab-style section that shows one widget at a time using radio-style tabs. */
+
+  .market-widgets-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0 !important;
+    margin-top: 16px !important;
+    background: #fff !important;
+    border-radius: 16px !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 2px 12px rgba(15,23,42,0.07) !important;
+    overflow: hidden !important;
+  }
+
+  /* Tab bar across the top */
+  .market-widgets-grid::before {
+    display: none !important; /* remove any pseudo content */
+  }
+
+  /* Each widget card becomes a section, all visible stacked */
+  .market-widgets-grid .widget-card,
+  .market-widgets-grid .feature-card.widget-card {
+    border: none !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+    margin: 0 !important;
+  }
+
+  .market-widgets-grid .widget-card:last-child,
+  .market-widgets-grid .feature-card.widget-card:last-child {
+    border-bottom: none !important;
+  }
+
+  /* Widget header — compact */
+  .market-widgets-grid .widget-header {
+    padding: 10px 14px !important;
+    background: #f8fafc !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+  }
+
+  .market-widgets-grid .widget-title {
+    font-size: 0.78rem !important;
+  }
+
+  /* Widget body — horizontal scroll row of items */
+  .market-widgets-grid .widget-body {
+    display: flex !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding: 10px 12px !important;
+    gap: 8px !important;
+    scrollbar-width: none !important;
+  }
+  .market-widgets-grid .widget-body::-webkit-scrollbar { display: none !important; }
+
+  /* Each stock item → compact pill card */
+  .market-widgets-grid .widget-item {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    min-width: 90px !important;
+    max-width: 90px !important;
+    flex-shrink: 0 !important;
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+    padding: 9px 10px !important;
+    cursor: pointer !important;
+    gap: 4px !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+  .market-widgets-grid .widget-item:hover {
+    background: #eff6ff !important;
+    border-color: #bfdbfe !important;
+    padding-left: 10px !important; /* cancel desktop hover slide */
+  }
+
+  .market-widgets-grid .widget-item-left,
+  .market-widgets-grid .widget-item-right {
+    display: contents !important; /* flatten — all children go into column */
+  }
+
+  .market-widgets-grid .widget-sym {
+    font-size: 0.75rem !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 70px !important;
+  }
+
+  .market-widgets-grid .widget-price {
+    font-size: 0.68rem !important;
+    color: #64748b !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 70px !important;
+  }
+
+  .market-widgets-grid .widget-pct {
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+  }
+
+  .market-widgets-grid .widget-change {
+    font-size: 0.65rem !important;
+    white-space: nowrap !important;
+    color: #94a3b8 !important;
+  }
+
+
+/* ── FIX 5: AI Chat — input bar not visible / positioned wrong ───────────
+   On mobile the card-footer (chat input) must sit above the bottom nav,
+   and the message area must not overflow behind it. */
+
+  /* chatFooter — fixed above bottom nav */
+  #chatFooter.card-footer {
+    position: fixed !important;
+    bottom: calc(60px + env(safe-area-inset-bottom)) !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 9980 !important;
+    padding: 10px 12px !important;
+    background: #fff !important;
+    border-top: 1px solid #e2e8f0 !important;
+    box-shadow: 0 -4px 16px rgba(15,23,42,0.08) !important;
+  }
+
+  /* Input group — proper flex row */
+  #chatFooter .input-group {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  /* Text input */
+  #chatFooter .type_msg {
+    flex: 1 !important;
+    min-width: 0 !important;
+    font-size: 0.88rem !important;
+    padding: 10px 14px !important;
+    border-radius: 22px !important;
+    height: 42px !important;
+  }
+
+  /* Buttons row */
+  #chatFooter .input-group-append {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 6px !important;
+    flex-shrink: 0 !important;
+  }
+
+  #chatFooter .send_btn,
+  #chatFooter .voice_btn {
+    width: 42px !important;
+    height: 42px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.95rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Message body — leave room for fixed chat footer + bottom nav */
+  #messageFormeight {
+    padding: 16px 14px !important;
+    padding-bottom: calc(70px + 60px + env(safe-area-inset-bottom) + 10px) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    flex: 1 !important;
+  }
+
+  /* Chat bubbles — narrower max-width on small screens */
+  .msg_cotainer_send { max-width: 85% !important; font-size: 0.85rem !important; padding: 10px 14px !important; }
+  .msg_cotainer      { max-width: 90% !important; font-size: 0.85rem !important; padding: 10px 14px !important; }
+
+} /* end @media (max-width: 768px) */

@@ -3584,36 +3584,53 @@ function closeMobDrawer() {
     }, { passive: true });
 })();
 
-// Sync mobile nav when desktop sidebar is clicked
-const _origSetSbActive = window.setSbActive;
-window.setSbActive = function(btn) {
-    if (_origSetSbActive) _origSetSbActive(btn);
-};
+// Patch showForm + goHome AFTER all scripts load so they are defined
+window.addEventListener('DOMContentLoaded', function() {
 
-// Override showForm to also update mobile nav active state
-const _origShowForm = window.showForm;
-if (typeof window.showForm !== 'undefined') {
-    const origSF = window.showForm;
-    window.showForm = function(section) {
-        origSF(section);
-        // Sync mobile nav tabs
-        const tabMap = { home: 'home', stock: 'stock', portfolio: 'portfolio', chat: 'chat' };
+    // ── Sync mobile nav active tab whenever showForm is called ──────────
+    const tabMap = { home: 'home', stock: 'stock', portfolio: 'portfolio', chat: 'chat' };
+
+    function setMobNavActive(section) {
         document.querySelectorAll('.mob-nav-item').forEach(b => b.classList.remove('active'));
-        if (tabMap[section]) {
-            const el = document.getElementById('mbn-' + tabMap[section]);
+        var key = tabMap[section];
+        if (key) {
+            var el = document.getElementById('mbn-' + key);
             if (el) el.classList.add('active');
         }
-    };
-}
+    }
 
-// Also patch goHome()
-const _origGoHome = window.goHome;
-window.goHome = function() {
-    if (_origGoHome) _origGoHome();
-    document.querySelectorAll('.mob-nav-item').forEach(b => b.classList.remove('active'));
-    const el = document.getElementById('mbn-home');
-    if (el) el.classList.add('active');
-};
+    if (typeof window.showForm === 'function') {
+        var _origSF = window.showForm;
+        window.showForm = function(section) {
+            _origSF(section);
+            setMobNavActive(section);
+            // Hide fixed chat footer when not in chat (prevents ghost overlay)
+            if (section !== 'chat') {
+                var cf = document.getElementById('chatFooter');
+                if (cf) cf.style.display = 'none';
+            }
+        };
+    }
+
+    // ── Patch goHome ────────────────────────────────────────────────────
+    if (typeof window.goHome === 'function') {
+        var _origGH = window.goHome;
+        window.goHome = function() {
+            _origGH();
+            // Hide chat footer so it doesn't ghost over home
+            var cf = document.getElementById('chatFooter');
+            if (cf) cf.style.display = 'none';
+            // Set home tab active
+            document.querySelectorAll('.mob-nav-item').forEach(b => b.classList.remove('active'));
+            var hEl = document.getElementById('mbn-home');
+            if (hEl) hEl.classList.add('active');
+        };
+    }
+
+    // ── Set Home active on first load ───────────────────────────────────
+    var homeEl = document.getElementById('mbn-home');
+    if (homeEl) homeEl.classList.add('active');
+});
 </script>
 
 </body>
