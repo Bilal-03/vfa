@@ -362,22 +362,7 @@
     .pt-tr:hover .pt-remove-btn { color: #cbd5e1; transform: scale(1); }
     .pt-remove-btn:hover { color: #dc2626 !important; background: #fee2e2; transform: scale(1.15) !important; }
 
-    .pt-edit-btn {
-        background: none;
-        border: none;
-        color: #e2e8f0;
-        cursor: pointer;
-        padding: 7px 9px;
-        border-radius: 8px;
-        transition: all 0.2s cubic-bezier(.34,1.56,.64,1);
-        font-size: 13px;
-        transform: scale(0.9);
-    }
-    .pt-tr:hover .pt-edit-btn { color: #cbd5e1; transform: scale(1); }
-    .pt-edit-btn:hover { color: #2563eb !important; background: #dbeafe; transform: scale(1.15) !important; }
-    .pt-action-btns { display: flex; align-items: center; gap: 2px; }
-
-
+    /* Skeleton */
     .pt-skel {
         background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
         background-size: 200% 100%;
@@ -608,8 +593,412 @@
     .pt-switch-btn:hover { color: #dc2626; }
     
     </style>
+
+<!-- ═══════════════════════════════════════════════════════
+     RESPONSIVE / MOBILE CSS — FinAssist
+     Covers all breakpoints without touching any functionality
+     ═══════════════════════════════════════════════════════ -->
+<style>
+
+/* ── Mobile hamburger button (hidden on desktop) ── */
+#mob-menu-btn {
+    display: none;
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 3001;
+    background: linear-gradient(135deg,#2563eb,#4f46e5);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    width: 40px; height: 40px;
+    font-size: 16px;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 14px rgba(37,99,235,0.35);
+    transition: transform 0.2s;
+}
+#mob-menu-btn:active { transform: scale(0.93); }
+
+/* Overlay backdrop for sidebar on mobile */
+#mob-sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15,23,42,0.5);
+    z-index: 2999;
+    backdrop-filter: blur(2px);
+}
+#mob-sidebar-overlay.show { display: block; }
+
+/* ── Tablet (≤ 991px) ── */
+@media (max-width: 991px) {
+
+    /* Show hamburger */
+    #mob-menu-btn { display: flex; }
+
+    /* Sidebar: slide-in drawer */
+    .menu-sidebar {
+        position: fixed !important;
+        top: 0; left: 0;
+        width: 270px !important;
+        max-width: 82vw;
+        height: 100vh;
+        z-index: 3000;
+        overflow-y: auto;
+        background: var(--sidebar-bg, #fff);
+        box-shadow: 4px 0 24px rgba(0,0,0,0.15);
+        transform: translateX(-110%);
+        transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+        padding-top: 56px !important;
+        flex: none !important;
+        max-width: none !important;
+    }
+    .menu-sidebar.mob-open {
+        transform: translateX(0);
+    }
+
+    /* Main content takes full width */
+    .main-content {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        margin-left: 0 !important;
+    }
+
+    /* Header: add left padding so hamburger doesn't overlap title */
+    .card-header {
+        padding-left: 56px !important;
+    }
+
+    /* Ticker bar: make it tighter */
+    .ticker-bar {
+        font-size: 12px;
+    }
+
+    /* Hero section: stack vertically */
+    .home-hero-v2 {
+        flex-direction: column !important;
+        gap: 20px !important;
+        padding: 30px 20px 24px !important;
+        text-align: center;
+        border-radius: 14px !important;
+    }
+    .hero-icon-cluster {
+        width: 90px; height: 90px;
+    }
+    .hero-center-icon {
+        width: 54px; height: 54px;
+        font-size: 1.4rem !important;
+    }
+    .hero-title { font-size: 1.5rem !important; }
+    .hero-sub   { font-size: 0.85rem !important; }
+    .hero-stats { justify-content: center; }
+    .hero-chips { justify-content: center; }
+
+    /* Feature cards grid: 2 columns */
+    .features-grid {
+        grid-template-columns: 1fr 1fr !important;
+        grid-template-rows: auto !important;
+    }
+    .chat-feature-card {
+        grid-column: span 2 !important;
+        grid-row: auto !important;
+    }
+
+    /* Market widgets: 2 columns */
+    .market-widgets-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    /* Portfolio summary cards: 2 columns on tablet */
+    .pt-summary-cards {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    /* Portfolio panel header: wrap nicely */
+    .pt-panel-header {
+        padding: 16px 18px !important;
+    }
+
+    /* Portfolio table: horizontal scroll already set, fine */
+    .pt-scroll-area { padding: 14px 14px !important; }
+
+    /* Forms container padding */
+    #formsContainer { padding: 0 !important; }
+
+    /* Result section */
+    #resultsContainer { padding: 0 !important; }
+
+    /* Toast: bottom-center on mobile */
+    .pt-toast {
+        bottom: 16px !important;
+        right: 50% !important;
+        transform: translateX(50%) translateY(10px) !important;
+    }
+    .pt-toast.pt-toast-show {
+        transform: translateX(50%) translateY(0) !important;
+    }
+}
+
+/* ── Mobile (≤ 600px) ── */
+@media (max-width: 600px) {
+
+    /* Base font smaller */
+    body { font-size: 14px; }
+
+    /* Card fills viewport */
+    .card { border-radius: 0 !important; }
+    .chat-container { padding: 0 !important; }
+
+    /* Header */
+    .card-header h5 { font-size: 0.92rem !important; }
+
+    /* Hero */
+    .home-hero-v2 { padding: 22px 14px 18px !important; border-radius: 10px !important; }
+    .hero-title { font-size: 1.25rem !important; }
+    .hero-stat  { padding: 8px 12px !important; }
+    .hero-stat-val { font-size: 1rem !important; }
+
+    /* Feature cards: single column */
+    .features-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .chat-feature-card { grid-column: 1 !important; }
+
+    /* Market widgets: single column */
+    .market-widgets-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* ── Portfolio: card view instead of table ── */
+    /* Hide table header, show stacked cards per row */
+    .pt-table thead { display: none !important; }
+    .pt-table,
+    .pt-table tbody,
+    .pt-table tr,
+    .pt-table td {
+        display: block !important;
+        width: 100% !important;
+    }
+    .pt-table-wrap {
+        border-radius: 12px !important;
+        overflow: hidden;
+    }
+    .pt-tr {
+        border-bottom: 1px solid #e2e8f0 !important;
+        padding: 14px 14px 10px !important;
+        position: relative;
+    }
+    .pt-tr:last-child { border-bottom: none !important; }
+    .pt-tr td {
+        padding: 2px 0 !important;
+        border-bottom: none !important;
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 12.5px;
+    }
+    /* Stock name cell: full width, no justify */
+    .pt-tr td:first-child {
+        justify-content: flex-start !important;
+        padding-bottom: 8px !important;
+        margin-bottom: 4px;
+        border-bottom: 1px solid #f1f5f9 !important;
+    }
+    /* Add data-label pseudo-labels */
+    .pt-tr td:nth-child(2)::before  { content: 'Qty'; font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
+    .pt-tr td:nth-child(3)::before  { content: 'Avg Buy'; font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
+    .pt-tr td:nth-child(4)::before  { content: 'LTP'; font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
+    .pt-tr td:nth-child(5)::before  { content: 'Invested'; font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
+    .pt-tr td:nth-child(6)::before  { content: 'Curr. Value'; font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
+    .pt-tr td:nth-child(7)::before  { content: 'P&L'; font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
+    .pt-tr td:nth-child(8)::before  { content: 'Return'; font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
+    /* Action buttons: right-aligned absolute at top-right of card */
+    .pt-tr td:last-child {
+        position: absolute !important;
+        top: 10px; right: 10px;
+        width: auto !important;
+        padding: 0 !important;
+        justify-content: flex-end !important;
+        border: none !important;
+    }
+    .pt-action-btns { gap: 0 !important; }
+    .pt-edit-btn, .pt-remove-btn {
+        padding: 6px 7px !important;
+        font-size: 12px !important;
+    }
+
+    /* Portfolio summary cards: 2 col compact */
+    .pt-summary-cards {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+    }
+    .pt-sum-card { padding: 10px 12px !important; }
+    .pt-sum-val  { font-size: 13px !important; }
+    .pt-sum-label{ font-size: 8px !important; }
+
+    /* Portfolio panel header */
+    .pt-panel-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+        padding: 14px 14px !important;
+    }
+    .pt-header-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+    .pt-panel-title { font-size: 0.95rem !important; }
+
+    /* Portfolio scroll area */
+    .pt-scroll-area { padding: 12px 10px !important; }
+
+    /* Modal: full-screen bottom sheet */
+    .pt-modal-box {
+        position: fixed !important;
+        bottom: 0 !important; left: 0 !important; right: 0 !important;
+        top: auto !important;
+        border-radius: 20px 20px 0 0 !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 24px 20px 32px !important;
+    }
+    .pt-modal-overlay {
+        align-items: flex-end !important;
+    }
+
+    /* Forms */
+    .input-form { padding: 14px !important; }
+    .input-form h5 { font-size: 0.95rem !important; }
+    .input-group, .form-group { margin-bottom: 10px !important; }
+
+    /* Results */
+    .result-header h3 { font-size: 1rem !important; }
+    .result-body { padding: 12px !important; }
+
+    /* Feature panel headers */
+    .fp-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+        padding: 14px !important;
+    }
+    .fp-content { padding: 10px !important; }
+
+    /* Currency converter rows */
+    .converter-row {
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+    .conv-swap-btn { transform: rotate(90deg); }
+
+    /* Ticker bar: slightly smaller font */
+    .ticker-bar { font-size: 11px; }
+    .ticker-label { font-size: 9px !important; }
+
+    /* Chat footer */
+    #chatFooter { padding: 8px 10px !important; }
+    .type_msg { font-size: 13px !important; }
+
+    /* Stock dashboard panels */
+    #stockDashboardPanel { padding: 0 !important; }
+    .si-header { padding: 12px 14px !important; flex-wrap: wrap; gap: 8px; }
+
+    /* MF panel */
+    .mf-grid { grid-template-columns: 1fr !important; }
+
+    /* Glossary */
+    .glossary-grid { grid-template-columns: 1fr !important; }
+
+    /* Step-up / SIP compare table */
+    .stepsip-compare { font-size: 12px !important; }
+    .stepsip-compare-row { padding: 6px 10px !important; }
+
+    /* Zakat hero */
+    .zakat-hero { padding: 18px 14px !important; }
+    .zakat-hero-value { font-size: 1.4rem !important; }
+
+    /* Back button */
+    #si-back-btn { font-size: 12px !important; padding: 6px 12px !important; }
+
+    /* Toast */
+    .pt-toast {
+        bottom: 12px !important;
+        left: 10px !important; right: 10px !important;
+        width: calc(100% - 20px) !important;
+        transform: translateY(10px) !important;
+        justify-content: center;
+    }
+    .pt-toast.pt-toast-show { transform: translateY(0) !important; }
+
+    /* Identity card */
+    .pt-identity-card { padding: 24px 18px 20px !important; }
+    .pt-identity-title { font-size: 1rem !important; }
+
+    /* Home page padding */
+    .home-page { padding: 10px !important; }
+
+    /* Mutual fund category bar */
+    #mfCatBar { overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+
+    /* News cards */
+    .news-grid { grid-template-columns: 1fr !important; }
+}
+
+/* ── Very small screens (≤ 380px) ── */
+@media (max-width: 380px) {
+    .hero-title { font-size: 1.1rem !important; }
+    .hero-chips { gap: 5px !important; }
+    .hero-chip  { font-size: 0.72rem !important; padding: 5px 10px !important; }
+    .pt-sum-card { padding: 8px 10px !important; }
+    .pt-btn { padding: 8px 14px !important; font-size: 12px !important; }
+}
+
+</style>
+
 </head>
 <body>
+
+<!-- Mobile hamburger button -->
+<button id="mob-menu-btn" onclick="toggleMobMenu()" aria-label="Open menu">
+    <i class="fas fa-bars" id="mob-menu-icon"></i>
+</button>
+<!-- Sidebar overlay -->
+<div id="mob-sidebar-overlay" onclick="closeMobMenu()"></div>
+
+<script>
+function toggleMobMenu() {
+    var sidebar = document.querySelector('.menu-sidebar');
+    var overlay = document.getElementById('mob-sidebar-overlay');
+    var icon    = document.getElementById('mob-menu-icon');
+    if (!sidebar) return;
+    var isOpen = sidebar.classList.toggle('mob-open');
+    overlay.classList.toggle('show', isOpen);
+    icon.className = isOpen ? 'fas fa-times' : 'fas fa-bars';
+    document.body.style.overflow = isOpen ? 'hidden' : '';
+}
+function closeMobMenu() {
+    var sidebar = document.querySelector('.menu-sidebar');
+    var overlay = document.getElementById('mob-sidebar-overlay');
+    var icon    = document.getElementById('mob-menu-icon');
+    if (!sidebar) return;
+    sidebar.classList.remove('mob-open');
+    overlay.classList.remove('show');
+    if (icon) icon.className = 'fas fa-bars';
+    document.body.style.overflow = '';
+}
+// Close sidebar when any menu item is clicked on mobile
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.sb-item').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            if (window.innerWidth <= 991) closeMobMenu();
+        });
+    });
+});
+</script>
 <div class="container-fluid h-100">
 <div class="row h-100">
 
@@ -1276,7 +1665,7 @@ document.addEventListener('DOMContentLoaded', function(){
     <!-- ADD HOLDING MODAL -->
     <div class="pt-modal-overlay" id="pt-modal" onclick="if(event.target===this)FinTracker.closeModal()">
         <div class="pt-modal-box">
-            <div class="pt-modal-title" id="pt-modal-title"><i class="fas fa-plus-circle"></i> Add / Update Holding</div>
+            <div class="pt-modal-title"><i class="fas fa-plus-circle"></i> Add / Update Holding</div>
             <div class="pt-field">
                 <label>Stock Symbol</label>
                 <input type="text" id="pt-modal-sym" placeholder="e.g. RELIANCE, INFY, AAPL"
@@ -1295,7 +1684,7 @@ document.addEventListener('DOMContentLoaded', function(){
             <div class="pt-modal-err" id="pt-modal-err"></div>
             <div class="pt-modal-actions">
                 <button class="pt-btn pt-btn-ghost" onclick="FinTracker.closeModal()">Cancel</button>
-                <button class="pt-btn pt-btn-primary" id="pt-modal-save-btn" onclick="FinTracker.saveHolding()">
+                <button class="pt-btn pt-btn-primary" onclick="FinTracker.saveHolding()">
                     <i class="fas fa-check"></i> Save
                 </button>
             </div>
