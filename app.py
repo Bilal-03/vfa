@@ -10,39 +10,19 @@ import traceback
 import os
 from market_data import get_market_indices, get_nifty_gainers, get_nifty_losers, get_nifty_volume, get_nifty_turnover
 
-import sqlite3
 import json
 import hashlib
 import time as _time
+from supabase import create_client, Client
 
-# ─── Portfolio DB (SQLite, file-based, persists across restarts) ───────────────
-_DB_PATH = os.path.join(os.path.dirname(__file__), 'portfolio_store.db')
+# ─── Portfolio DB (Supabase — persistent across restarts & deployments) ────────
+_SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+_SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
 
-def _db():
-    conn = sqlite3.connect(_DB_PATH, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-def _init_db():
-    with _db() as c:
-        c.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                username TEXT PRIMARY KEY COLLATE NOCASE,
-                created_at INTEGER DEFAULT (strftime('%s','now'))
-            )
-        """)
-        c.execute("""
-            CREATE TABLE IF NOT EXISTS portfolios (
-                username  TEXT COLLATE NOCASE,
-                symbol    TEXT,
-                qty       REAL,
-                avg_price REAL,
-                added_at  INTEGER,
-                PRIMARY KEY (username, symbol),
-                FOREIGN KEY (username) REFERENCES users(username)
-            )
-        """)
-_init_db()
+def _supa() -> Client:
+    if not _SUPABASE_URL or not _SUPABASE_KEY:
+        raise RuntimeError("SUPABASE_URL and SUPABASE_KEY must be set in .env")
+    return create_client(_SUPABASE_URL, _SUPABASE_KEY)
 app = Flask(__name__)
 app.secret_key = os.environ.get("9e45618318df240f85c0e4941f81ba48c08130d8406a8788ee6d1a3d1e0c9a23", "fallback-dev-key")
 # ─── Portfolio API Routes ──────────────────────────────────────────────────────
@@ -53,14 +33,23 @@ def portfolio_identify():
     username = (data.get('username') or '').strip()
     if not username or len(username) < 2 or len(username) > 30:
         return jsonify({'error': 'Username must be 2-30 characters'}), 400
-    # Only allow alphanumeric + underscore + hyphen
     import re as _re
     if not _re.match(r'^[A-Za-z0-9_\-]+$', username):
         return jsonify({'error': 'Only letters, numbers, _ and - allowed'}), 400
-    with _db() as c:
-        c.execute("INSERT OR IGNORE INTO users (username) VALUES (?)", (username,))
-        user = c.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
-    return jsonify({'ok': True, 'username': user['username'], 'created_at': user['created_at']})
+    try:
+        sb = _supa()
+        # Check if user exists
+        res = sb.table('users').select('*').ilike('username', username).execute()
+        if res.data:
+            user = res.data[0]
+        else:
+            # Insert new user
+            ts = int(_time.time())
+            ins = sb.table('users').insert({'username': username, 'created_at': ts}).execute()
+            user = ins.data[0]
+        return jsonify({'ok': True, 'username': user['username'], 'created_at': user['created_at']})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/portfolio/load')
 def portfolio_load():
@@ -68,13 +57,14 @@ def portfolio_load():
     username = (request.args.get('username') or '').strip()
     if not username:
         return jsonify({'error': 'Missing username'}), 400
-    with _db() as c:
-        rows = c.execute(
-            "SELECT symbol, qty, avg_price, added_at FROM portfolios WHERE username=? ORDER BY added_at",
-            (username,)
-        ).fetchall()
-    holdings = [{'symbol': r['symbol'], 'qty': r['qty'], 'avg': r['avg_price'], 'addedAt': r['added_at']} for r in rows]
-    return jsonify({'holdings': holdings})
+    try:
+        sb = _supa()
+        res = sb.table('portfolios').select('symbol, qty, avg_price, added_at') \
+                .ilike('username', username).order('added_at').execute()
+        holdings = [{'symbol': r['symbol'], 'qty': r['qty'], 'avg': r['avg_price'], 'addedAt': r['added_at']} for r in res.data]
+        return jsonify({'holdings': holdings})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/portfolio/save', methods=['POST'])
 def portfolio_save():
@@ -87,14 +77,18 @@ def portfolio_save():
     added_at = data.get('added_at') or int(_time.time() * 1000)
     if not username or not symbol or qty is None or avg is None:
         return jsonify({'error': 'Missing fields'}), 400
-    with _db() as c:
-        c.execute("INSERT OR IGNORE INTO users (username) VALUES (?)", (username,))
-        c.execute("""
-            INSERT INTO portfolios (username, symbol, qty, avg_price, added_at)
-            VALUES (?,?,?,?,?)
-            ON CONFLICT(username, symbol) DO UPDATE SET qty=excluded.qty, avg_price=excluded.avg_price
-        """, (username, symbol, float(qty), float(avg), int(added_at)))
-    return jsonify({'ok': True})
+    try:
+        sb = _supa()
+        # Ensure user exists
+        sb.table('users').upsert({'username': username, 'created_at': int(_time.time())}, on_conflict='username').execute()
+        # Upsert holding
+        sb.table('portfolios').upsert({
+            'username': username, 'symbol': symbol,
+            'qty': float(qty), 'avg_price': float(avg), 'added_at': int(added_at)
+        }, on_conflict='username,symbol').execute()
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/portfolio/delete', methods=['POST'])
 def portfolio_delete():
@@ -104,9 +98,12 @@ def portfolio_delete():
     symbol   = (data.get('symbol') or '').strip().upper()
     if not username or not symbol:
         return jsonify({'error': 'Missing fields'}), 400
-    with _db() as c:
-        c.execute("DELETE FROM portfolios WHERE username=? AND symbol=?", (username, symbol))
-    return jsonify({'ok': True})
+    try:
+        sb = _supa()
+        sb.table('portfolios').delete().ilike('username', username).eq('symbol', symbol).execute()
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/portfolio/sync', methods=['POST'])
 def portfolio_sync():
@@ -116,17 +113,22 @@ def portfolio_sync():
     holdings = data.get('holdings', [])
     if not username:
         return jsonify({'error': 'Missing username'}), 400
-    with _db() as c:
-        c.execute("INSERT OR IGNORE INTO users (username) VALUES (?)", (username,))
-        c.execute("DELETE FROM portfolios WHERE username=?", (username,))
+    try:
+        sb = _supa()
+        sb.table('users').upsert({'username': username, 'created_at': int(_time.time())}, on_conflict='username').execute()
+        sb.table('portfolios').delete().ilike('username', username).execute()
+        rows = []
         for h in holdings:
             sym = (h.get('symbol') or '').strip().upper()
             if not sym: continue
-            c.execute("""
-                INSERT OR REPLACE INTO portfolios (username, symbol, qty, avg_price, added_at)
-                VALUES (?,?,?,?,?)
-            """, (username, sym, float(h.get('qty',0)), float(h.get('avg',0)), int(h.get('addedAt', _time.time()*1000))))
-    return jsonify({'ok': True})
+            rows.append({'username': username, 'symbol': sym,
+                         'qty': float(h.get('qty', 0)), 'avg_price': float(h.get('avg', 0)),
+                         'added_at': int(h.get('addedAt', _time.time() * 1000))})
+        if rows:
+            sb.table('portfolios').insert(rows).execute()
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 

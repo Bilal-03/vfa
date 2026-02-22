@@ -74,7 +74,22 @@ const FinTracker = (() => {
         });
     }
 
-    // ── Toast ─────────────────────────────────────────────────────────────────
+    // ── USD/INR exchange rate (cached for 10 min) ─────────────────────────────
+    let _usdInr = null;
+    let _usdInrTs = 0;
+    async function getUsdInr() {
+        const now = Date.now();
+        if (_usdInr && (now - _usdInrTs) < 600000) return _usdInr; // cache 10 min
+        try {
+            const r = await fetch('https://api.frankfurter.app/latest?from=USD&to=INR');
+            const d = await r.json();
+            _usdInr = d.rates?.INR || 84.0;
+        } catch {
+            _usdInr = _usdInr || 84.0; // fallback
+        }
+        _usdInrTs = now;
+        return _usdInr;
+    }
     function toast(msg, type='success') {
         const t=document.createElement('div');
         t.className=`pt-toast pt-toast-${type}`;
@@ -321,13 +336,22 @@ const FinTracker = (() => {
             return{h,q,p};
         }));
 
+        // Fetch live USD/INR rate for cross-currency portfolio totals
+        const usdInr = await getUsdInr();
+
         let totI=0,totC=0,hasLive=false;
         const rows=results.map(({h,q,p})=>{
-            const ltp=q?.current??null, curr=q?.currency==='USD'?'$':'₹';
+            const isUS = q?.currency==='USD';
+            const ltp=q?.current??null, curr=isUS?'$':'₹';
             const inv=h.qty*h.avg, cv=ltp!=null?h.qty*ltp:null;
             const pnl=cv!=null?cv-inv:null, pnlP=pnl!=null&&inv?(pnl/inv)*100:null;
             const name=p?.name||display(h.symbol);
-            if(cv!=null){totI+=inv;totC+=cv;hasLive=true;}
+            // Convert USD values to INR for aggregate totals
+            if(cv!=null){
+                totI += isUS ? inv*usdInr : inv;
+                totC += isUS ? cv*usdInr  : cv;
+                hasLive=true;
+            }
             return `<tr class="pt-tr" onclick="showStockFromPortfolio('${h.symbol}')" style="cursor:pointer;" title="View ${display(h.symbol)}">
                 <td><div class="pt-stock-cell">
                     <div class="pt-logo-wrap">${mkLogo(name,p?.logo,'34px','9px')}</div>
@@ -354,9 +378,21 @@ const FinTracker = (() => {
         }).join('');
 
         const totPnl=totC-totI, totPct=totI>0?(totPnl/totI)*100:0;
+        // Check if portfolio has mixed currencies
+        // Show/hide currency pill badge in the header
+        const hasMixedCcy = results.some(({q})=>q?.currency==='USD') && results.some(({q})=>q?.currency!=='USD');
+        const ccyBadge = document.getElementById('pt-ccy-badge');
+        if (ccyBadge) {
+            if (hasMixedCcy) {
+                ccyBadge.textContent = `$→₹ ${usdInr.toFixed(2)}`;
+                ccyBadge.style.display = 'inline-flex';
+            } else {
+                ccyBadge.style.display = 'none';
+            }
+        }
         if(sumBar&&hasLive) sumBar.innerHTML=`<div class="pt-summary-cards">
-            <div class="pt-sum-card"><div class="pt-sum-label">Invested</div><div class="pt-sum-val">${fmtMoney(totI)}</div></div>
-            <div class="pt-sum-card"><div class="pt-sum-label">Current Value</div><div class="pt-sum-val">${fmtMoney(totC)}</div></div>
+            <div class="pt-sum-card"><div class="pt-sum-label">Invested (₹)</div><div class="pt-sum-val">${fmtMoney(totI)}</div></div>
+            <div class="pt-sum-card"><div class="pt-sum-label">Current Value (₹)</div><div class="pt-sum-val">${fmtMoney(totC)}</div></div>
             <div class="pt-sum-card ${cls(totPnl)}"><div class="pt-sum-label">Total P&amp;L</div><div class="pt-sum-val">${(totPnl>=0?'+':'')+fmtMoney(totPnl)}</div></div>
             <div class="pt-sum-card ${cls(totPct)}"><div class="pt-sum-label">Returns</div><div class="pt-sum-val">${fmtPct(totPct)}</div></div>
             <div class="pt-sum-card"><div class="pt-sum-label">Holdings</div><div class="pt-sum-val">${port.length}</div></div>

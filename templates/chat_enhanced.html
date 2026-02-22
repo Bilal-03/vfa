@@ -178,6 +178,23 @@
         animation: ptPulse 1.6s infinite;
         box-shadow: 0 0 6px rgba(34,197,94,0.6);
     }
+    .pt-ccy-badge {
+        font-size: 10.5px;
+        font-weight: 700;
+        color: #0369a1;
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
+        border-radius: 20px;
+        padding: 5px 11px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        letter-spacing: 0.01em;
+    }
+    .pt-ccy-badge::before {
+        content: '💱';
+        font-size: 11px;
+    }
 
     /* Add Holding Button */
     .pt-btn-primary {
@@ -1275,6 +1292,7 @@ document.addEventListener('DOMContentLoaded', function(){
             </div>
             <div class="pt-header-actions">
                 <div id="pt-user-badge" class="pt-user-badge" style="display:none;"></div>
+                <span id="pt-ccy-badge" class="pt-ccy-badge" style="display:none;"></span>
                 <span class="pt-live-badge"><span class="pt-live-dot"></span> LIVE · 30s refresh</span>
                 <button id="pt-add-btn" class="pt-btn pt-btn-primary" style="display:none;" onclick="FinTracker.openAddHolding()">
                     <i class="fas fa-plus"></i> Add Holding

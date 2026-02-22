@@ -11,3 +11,4 @@ gunicorn
 python-dotenv
 google-generativeai
 groq
+supabase
