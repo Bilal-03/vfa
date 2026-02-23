@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#2563eb">
+    <title>Portfolio – VFA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style_mobile.css') }}">
+
+    <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        background: #f1f5f9;
+        min-height: 100vh;
+        -webkit-tap-highlight-color: transparent;
+        overscroll-behavior: none;
+    }
+
+    /* ── Top Header ── */
+    .pf-header {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        height: 56px;
+        background: #fff;
+        border-bottom: 1.5px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        padding: 0 14px;
+        gap: 10px;
+        z-index: 100;
+        box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    }
+    .pf-back-btn {
+        width: 36px; height: 36px;
+        border: none; background: #f1f5f9;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 15px; color: #475569;
+        cursor: pointer; flex-shrink: 0;
+    }
+    .pf-back-btn:active { background: #e2e8f0; }
+    .pf-header-title {
+        flex: 1;
+        font-size: 16px; font-weight: 800; color: #0f172a;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .pf-header-title i { color: #d97706; }
+    .pf-header-right {
+        display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+    }
+    .pf-ccy-badge {
+        background: #f0fdf4; border: 1px solid #bbf7d0;
+        border-radius: 20px; padding: 3px 8px;
+        font-size: 10px; font-weight: 700; color: #15803d;
+        white-space: nowrap;
+    }
+    .pf-user-badge {
+        background: #eff6ff; border: 1px solid #bfdbfe;
+        border-radius: 20px; padding: 3px 10px;
+        font-size: 11px; font-weight: 700; color: #1d4ed8;
+        display: flex; align-items: center; gap: 5px;
+        white-space: nowrap; max-width: 110px;
+        overflow: hidden; text-overflow: ellipsis;
+    }
+    .pf-switch-btn, .pt-switch-btn {
+        background: none !important;
+        border: none;
+        color: #93c5fd;
+        cursor: pointer;
+        font-size: 10px;
+        padding: 0 0 0 3px;
+        line-height: 1;
+        vertical-align: middle;
+        box-shadow: none !important;
+        -webkit-appearance: none;
+    }
+    .pf-add-btn {
+        width: 34px; height: 34px;
+        background: #2563eb; border: none;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        color: #fff; font-size: 16px; cursor: pointer;
+    }
+    .pf-add-btn:active { background: #1d4ed8; transform: scale(.96); }
+
+    /* ── Main content (below header, above bottom nav) ── */
+    .pf-main {
+        padding-top: 56px;
+        padding-bottom: 70px;
+        min-height: 100vh;
+    }
+
+    /* ── Summary Bar — match page background ── */
+    #pt-summary-bar { background: #f1f5f9; border-bottom: none; padding: 12px 16px 0; }
+
+    /* ── Override summary cards to sit on grey background ── */
+    .pt-summary-cards { background: transparent; padding: 0; gap: 10px; }
+    .pt-sum-card { background: #fff; }
+
+    /* ── Holdings wrap — grey gap between cards ── */
+    .pt-holdings-wrap { background: #f1f5f9; }
+    .pt-holding-card { background: #fff; }
+
+    /* ── Identity & empty state pages ── */
+    .pt-identity-page { background: #f1f5f9; }
+    .pt-empty { background: #f1f5f9; }
+
+    /* ── Content Area ── */
+    #pt-content { background: #f1f5f9; }
+
+    /* ── Bottom Nav ── */
+    .pf-bottom-nav {
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        height: 62px;
+        background: #fff;
+        border-top: 1.5px solid #e2e8f0;
+        display: flex;
+        box-shadow: 0 -2px 12px rgba(0,0,0,.06);
+        z-index: 100;
+    }
+    .pf-nav-item {
+        flex: 1;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        gap: 3px; border: none; background: none;
+        color: #94a3b8; font-size: 10px; font-weight: 700;
+        font-family: inherit; cursor: pointer;
+        transition: color .15s;
+        text-decoration: none !important;
+    }
+    .pf-nav-item:link, .pf-nav-item:visited,
+    .pf-nav-item:hover, .pf-nav-item:active { text-decoration: none !important; }
+    .pf-nav-item i { font-size: 18px; }
+    .pf-nav-item.active { color: #2563eb; }
+    .pf-nav-item:active { opacity: .75; }
+
+    /* ── Portfolio Modal ── */
+    .pt-modal-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(15,23,42,.5);
+        backdrop-filter: blur(4px);
+        z-index: 9999;
+        align-items: flex-end;
+        justify-content: center;
+    }
+    .pt-modal-overlay.pt-modal-open { display: flex !important; }
+    .pt-modal-box {
+        background: #fff;
+        border-radius: 22px 22px 0 0;
+        padding: 24px 20px 36px;
+        width: 100%; max-width: 480px;
+        box-shadow: 0 -8px 40px rgba(0,0,0,.18);
+        animation: slideUp .25s ease;
+    }
+    @keyframes slideUp {
+        from { transform: translateY(60px); opacity: 0; }
+        to   { transform: translateY(0);    opacity: 1; }
+    }
+    .pt-modal-handle {
+        width: 40px; height: 4px; background: #e2e8f0;
+        border-radius: 4px; margin: 0 auto 20px;
+    }
+    .pt-modal-title {
+        font-size: 1rem; font-weight: 800; color: #0f172a;
+        margin-bottom: 18px;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .pt-modal-title i { color: #2563eb; }
+    .pt-field { margin-bottom: 13px; }
+    .pt-field label {
+        display: block; font-size: 11px; font-weight: 700;
+        color: #64748b; text-transform: uppercase;
+        letter-spacing: .5px; margin-bottom: 6px;
+    }
+    .pt-field input {
+        width: 100%; border: 1.5px solid #e2e8f0;
+        border-radius: 12px; padding: 12px 14px;
+        font-size: 15px; color: #0f172a; outline: none;
+        font-family: inherit; transition: border-color .2s;
+    }
+    .pt-field input:focus { border-color: #2563eb; }
+    .pt-modal-err { font-size: 12px; color: #dc2626; min-height: 16px; margin-bottom: 6px; }
+    .pt-modal-actions {
+        display: flex; gap: 8px;
+        justify-content: flex-end; margin-top: 8px;
+    }
+    .pt-btn {
+        border: none; border-radius: 12px;
+        padding: 12px 20px; font-size: 13px; font-weight: 700;
+        cursor: pointer; display: inline-flex;
+        align-items: center; gap: 6px;
+        font-family: inherit; transition: all .15s;
+    }
+    .pt-btn-primary  { background: #2563eb; color: #fff; flex: 1; justify-content: center; }
+    .pt-btn-primary:active  { background: #1d4ed8; }
+    .pt-btn-ghost    { background: #f1f5f9; color: #64748b; }
+    .pt-btn-danger   { background: #fee2e2; color: #dc2626; }
+
+    /* ── Toast ── */
+    .pt-toast {
+        position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+        background: #0f172a; color: #fff;
+        border-radius: 14px; padding: 11px 18px;
+        font-size: 13px; font-weight: 600;
+        display: flex; align-items: center; gap: 8px;
+        opacity: 0; z-index: 99999;
+        white-space: nowrap;
+        transition: opacity .25s, transform .25s;
+        box-shadow: 0 4px 20px rgba(0,0,0,.25);
+    }
+    .pt-toast.pt-toast-show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .pt-toast.pt-toast-success i { color: #4ade80; }
+    .pt-toast.pt-toast-error   i { color: #f87171; }
+    .pt-toast.pt-toast-info    i { color: #60a5fa; }
+    </style>
+</head>
+<body>
+
+<!-- ── Top Header ── -->
+<header class="pf-header">
+    <button class="pf-back-btn" onclick="history.back()"><i class="fas fa-arrow-left"></i></button>
+    <div class="pf-header-title">
+        <i class="fas fa-briefcase"></i> Portfolio
+    </div>
+    <div class="pf-header-right">
+        <span id="pt-ccy-badge" class="pf-ccy-badge" style="display:none;"></span>
+        <div id="pt-user-badge" class="pf-user-badge" style="display:none;"></div>
+        <button class="pf-add-btn" id="pt-add-btn" style="display:none;" onclick="FinTracker.openAddHolding()">
+            <i class="fas fa-plus"></i>
+        </button>
+    </div>
+</header>
+
+<!-- ── Main Content ── -->
+<main class="pf-main">
+    <div id="pt-summary-bar"></div>
+    <div id="pt-content" style="padding:0 0 20px;"></div>
+</main>
+
+<!-- ── Portfolio Modal (slide up sheet) ── -->
+<div class="pt-modal-overlay" id="pt-modal" onclick="if(event.target===this)FinTracker.closeModal()">
+    <div class="pt-modal-box">
+        <div class="pt-modal-handle"></div>
+        <div class="pt-modal-title" id="pt-modal-title">
+            <i class="fas fa-plus-circle"></i> Add Holding
+        </div>
+        <div class="pt-field">
+            <label>Stock Symbol</label>
+            <input type="text" id="pt-modal-sym" placeholder="e.g. RELIANCE, INFY, AAPL"
+                   autocomplete="off" autocorrect="off" spellcheck="false"
+                   style="text-transform:uppercase;">
+        </div>
+        <div class="pt-field">
+            <label>Quantity</label>
+            <input type="number" id="pt-modal-qty" placeholder="e.g. 10" min="0.001" step="any" inputmode="decimal">
+        </div>
+        <div class="pt-field">
+            <label>Avg Buy Price</label>
+            <input type="number" id="pt-modal-avg" placeholder="e.g. 2450.00" min="0" step="any" inputmode="decimal">
+        </div>
+        <div class="pt-modal-err" id="pt-modal-err"></div>
+        <div class="pt-modal-actions">
+            <button class="pt-btn pt-btn-ghost" onclick="FinTracker.closeModal()">Cancel</button>
+            <button class="pt-btn pt-btn-danger" id="pt-modal-del" style="display:none;" onclick="FinTracker.deleteHolding()">Delete</button>
+            <button class="pt-btn pt-btn-primary" id="pt-modal-save-btn" onclick="FinTracker.saveHolding()">
+                <i class="fas fa-save"></i> Save
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Bottom Nav ── -->
+<nav class="pf-bottom-nav">
+    <a href="/" class="pf-nav-item">
+        <i class="fas fa-home"></i><span>Home</span>
+    </a>
+    <a href="/#stocks" class="pf-nav-item">
+        <i class="fas fa-chart-line"></i><span>Stocks</span>
+    </a>
+    <a href="/#calc" class="pf-nav-item">
+        <i class="fas fa-calculator"></i><span>Calc</span>
+    </a>
+    <a href="/portfolio" class="pf-nav-item active">
+        <i class="fas fa-briefcase"></i><span>Portfolio</span>
+    </a>
+    <a href="/#more" class="pf-nav-item">
+        <i class="fas fa-ellipsis-h"></i><span>More</span>
+    </a>
+</nav>
+
+<!-- Scripts -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+<script>
+// ── Helpers needed by portfolio_watchlist.js ────────────────────────────
+// showScreen stub (portfolio JS calls this for navigation)
+window.showScreen = function(id) {
+    if (id === 'stockScreen') { window.location.href = '/?screen=stocks'; return; }
+    if (id === 'portfolioScreen') { /* already here */ return; }
+    window.location.href = '/';
+};
+window.setNavActive = function() {};
+
+// siGoBack — go back to main app
+window.siGoBack = function() { window.location.href = '/'; };
+
+// showStockFromPortfolio — navigate to stock screen on main app
+window.showStockFromPortfolio = function(sym) {
+    window.location.href = '/?screen=stocks&symbol=' + encodeURIComponent(sym);
+};
+
+window.showToast = function(msg, type = 'success') {
+    const icons = { success: 'check-circle', error: 'exclamation-circle', info: 'info-circle', warning: 'exclamation-triangle' };
+    const t = document.createElement('div');
+    t.className = `pt-toast pt-toast-${type}`;
+    t.innerHTML = `<i class="fas fa-${icons[type] || 'info-circle'}"></i><span>${msg}</span>`;
+    document.body.appendChild(t);
+    requestAnimationFrame(() => t.classList.add('pt-toast-show'));
+    setTimeout(() => { t.classList.remove('pt-toast-show'); setTimeout(() => t.remove(), 350); }, 2800);
+};
+</script>
+
+<script src="{{ url_for('static', filename='portfolio_watchlist_mobile.js') }}"></script>
+
+<script>
+// ── Auto-start portfolio on load ────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+    // Re-map badge element IDs to match this page's class names
+    const userBadge = document.getElementById('pt-user-badge');
+    if (userBadge) {
+        // Override updateUsernameDisplay to use pf- prefix classes
+        const origClass = userBadge.className;
+        userBadge.className = 'pf-user-badge';
+    }
+    const ccyBadge = document.getElementById('pt-ccy-badge');
+    if (ccyBadge) ccyBadge.className = 'pf-ccy-badge';
+
+    // Kick off the portfolio
+    if (typeof FinTracker !== 'undefined') {
+        FinTracker.startPortfolioRefresh();
+    }
+
+    // Handle stock symbol from URL if navigated from portfolio stock view
+    const params = new URLSearchParams(window.location.search);
+    // (nothing extra needed on this page)
+});
+</script>
+
+</body>
+</html>
