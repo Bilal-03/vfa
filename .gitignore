@@ -68,3 +68,4 @@ flask_session/
 ehthumbs.db
 Thumbs.db
 desktop.ini
+.env
