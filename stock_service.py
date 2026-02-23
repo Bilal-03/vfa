@@ -21,6 +21,30 @@ _cache: dict = {}
 
 def _get(key): e=_cache.get(key); return e["data"] if e and time.time()-e["ts"]<e["ttl"] else None
 def _set(key,data,ttl): _cache[key]={"ts":time.time(),"data":data,"ttl":ttl}
+
+def _get_ticker_info(symbol, retries=3, base_delay=2):
+    """Fetch yfinance Ticker.info with exponential backoff to handle Yahoo rate limits."""
+    last_err = None
+    for attempt in range(retries):
+        try:
+            ticker = yf.Ticker(symbol, session=_YF_SESSION) if _YF_SESSION else yf.Ticker(symbol)
+            info = ticker.info or {}
+            if info:
+                return ticker, info
+            # Empty info — might be rate limited, retry
+            raise ValueError("Empty info returned")
+        except Exception as e:
+            last_err = e
+            err_str = str(e).lower()
+            # Don't retry on invalid symbol errors
+            if "no data found" in err_str or "symbol may be delisted" in err_str:
+                break
+            if attempt < retries - 1:
+                delay = base_delay * (2 ** attempt) + random.uniform(0, 1)
+                print(f"⚠️  yfinance rate limit / error for {symbol} (attempt {attempt+1}): {e}. Retrying in {delay:.1f}s...")
+                time.sleep(delay)
+    raise last_err or Exception("Failed to fetch ticker info")
+
 def _safe(v,d=2):
     try: f=float(v); return None if f!=f else round(f,d)
     except: return None
@@ -104,7 +128,7 @@ def get_profile(symbol):
     k=f"profile:{symbol}"; c=_get(k)
     if c: return c
     try:
-        info=yf.Ticker(symbol, session=_YF_SESSION).info or {} if _YF_SESSION else yf.Ticker(symbol).info or {}
+        _, info = _get_ticker_info(symbol)
         website = info.get("website","")
         logo = info.get("logo_url","") or _get_logo(symbol, website)
         data={"symbol":info.get("symbol",symbol),"name":info.get("longName") or info.get("shortName",symbol),
@@ -122,7 +146,7 @@ def get_quote(symbol):
     k=f"quote:{symbol}"; c=_get(k)
     if c: return c
     try:
-        info=yf.Ticker(symbol, session=_YF_SESSION).info or {} if _YF_SESSION else yf.Ticker(symbol).info or {}
+        _, info = _get_ticker_info(symbol)
         cur=_safe(info.get("currentPrice") or info.get("regularMarketPrice") or info.get("previousClose",0))
         prev=_safe(info.get("previousClose") or info.get("regularMarketPreviousClose",0))
         chg=_safe((cur or 0)-(prev or 0)); chgp=_safe(((chg/prev)*100) if prev else 0)
@@ -132,7 +156,7 @@ def get_quote(symbol):
               "open":_safe(info.get("open") or info.get("regularMarketOpen")),
               "prev_close":prev,"volume":info.get("volume",0),"avg_volume":info.get("averageVolume"),
               "currency":info.get("currency","INR")}
-        _set(k,data,120); return data
+        _set(k,data,300); return data
     except Exception as e: return {"error":str(e)}
 
 # ── Candle helpers ────────────────────────────────────────────────────────────
@@ -249,8 +273,7 @@ def get_metrics(symbol):
     k = f"metrics:{symbol}"; c = _get(k)
     if c: return c
     try:
-        t    = yf.Ticker(symbol)
-        info = t.info or {}
+        t, info = _get_ticker_info(symbol)
 
         roe = _compute_roe(t, info)
 
@@ -288,7 +311,7 @@ def get_analyst(symbol):
     k=f"analyst:{symbol}"; c=_get(k)
     if c: return c
     try:
-        t=yf.Ticker(symbol, session=_YF_SESSION) if _YF_SESSION else yf.Ticker(symbol); info=t.info or {}
+        t, info = _get_ticker_info(symbol)
         sb=buy=hold=sell=ssell=0
         try:
             rdf=t.recommendations
@@ -383,6 +406,59 @@ def get_news(symbol):
         return {"error": str(e), "articles": []}
 
 def get_full_dashboard(symbol):
+    """
+    Fetch all dashboard data with a SINGLE yfinance .info call,
+    then populate the cache for each sub-function to avoid hitting
+    Yahoo Finance 5 times and triggering rate limits.
+    """
+    # Warm up individual caches if not already set
+    # This ensures a single .info round-trip for the whole dashboard
+    try:
+        t, info = _get_ticker_info(symbol)
+
+        # Pre-populate profile cache
+        pk = f"profile:{symbol}"
+        if not _get(pk):
+            website = info.get("website","")
+            logo = info.get("logo_url","") or _get_logo(symbol, website)
+            _set(pk, {"symbol":info.get("symbol",symbol),"name":info.get("longName") or info.get("shortName",symbol),
+                  "logo":logo,"exchange":info.get("exchange","NSE"),
+                  "industry":info.get("industry","N/A"),"sector":info.get("sector","N/A"),
+                  "country":info.get("country","India"),"currency":info.get("currency","INR"),
+                  "web_url":website,"description":(info.get("longBusinessSummary") or "")[:400],
+                  "employees":info.get("fullTimeEmployees"),"market_cap":info.get("marketCap")}, 86400)
+
+        # Pre-populate quote cache
+        qk = f"quote:{symbol}"
+        if not _get(qk):
+            cur=_safe(info.get("currentPrice") or info.get("regularMarketPrice") or info.get("previousClose",0))
+            prev=_safe(info.get("previousClose") or info.get("regularMarketPreviousClose",0))
+            chg=_safe((cur or 0)-(prev or 0)); chgp=_safe(((chg/prev)*100) if prev else 0)
+            _set(qk, {"symbol":symbol,"current":cur,"change":chg,"change_pct":chgp,
+                  "high":_safe(info.get("dayHigh") or info.get("regularMarketDayHigh")),
+                  "low":_safe(info.get("dayLow") or info.get("regularMarketDayLow")),
+                  "open":_safe(info.get("open") or info.get("regularMarketOpen")),
+                  "prev_close":prev,"volume":info.get("volume",0),"avg_volume":info.get("averageVolume"),
+                  "currency":info.get("currency","INR")}, 300)
+
+        # Pre-populate metrics cache
+        mk = f"metrics:{symbol}"
+        if not _get(mk):
+            roe = _compute_roe(t, info)
+            _set(mk, {"symbol":symbol,"pe_ratio":_safe(info.get("trailingPE")),
+                  "pe_forward":_safe(info.get("forwardPE")),"eps_ttm":_safe(info.get("trailingEps")),
+                  "eps_forward":_safe(info.get("forwardEps")),"gross_margins":_safe(info.get("grossMargins")),
+                  "profit_margins":_safe(info.get("profitMargins")),"operating_margins":_safe(info.get("operatingMargins")),
+                  "roe":roe,"roa":_safe(info.get("returnOnAssets")),"debt_equity":_safe(info.get("debtToEquity")),
+                  "current_ratio":_safe(info.get("currentRatio")),"quick_ratio":_safe(info.get("quickRatio")),
+                  "dividend_yield":_safe(info.get("dividendYield")),"week52_high":_safe(info.get("fiftyTwoWeekHigh")),
+                  "week52_low":_safe(info.get("fiftyTwoWeekLow")),"beta":_safe(info.get("beta")),
+                  "price_to_book":_safe(info.get("priceToBook")),"ev_ebitda":_safe(info.get("enterpriseToEbitda")),
+                  "market_cap":info.get("marketCap"),"free_cashflow":info.get("freeCashflow"),
+                  "total_cash":info.get("totalCash"),"total_debt":info.get("totalDebt")}, 3600)
+    except Exception as e:
+        return {"symbol":symbol,"error":str(e),"quote":{"error":str(e)}}
+
     return {"symbol":symbol,"profile":get_profile(symbol),"quote":get_quote(symbol),
             "metrics":get_metrics(symbol),"analyst":get_analyst(symbol),
             "fetched_at":datetime.now(timezone.utc).isoformat()}
