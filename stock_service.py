@@ -1,35 +1,11 @@
 """
-stock_service.py — yfinance backend with cloud-server fix.
-
-ONLY CHANGE from original: Yahoo Finance blocks .info on cloud IPs (Render/AWS).
-Fix strategy:
-  1. curl_cffi session  — impersonates Chrome, bypasses Yahoo bot detection
-  2. NSE public API     — primary source for Indian stock quote + metrics (never blocked)
-  3. yfinance in thread — 8s hard timeout so a Yahoo block never hangs the page
-  
-All field names, cache TTLs, and logic are IDENTICAL to the original.
+stock_service.py — yfinance backend, no API key required.
+Fixed: news format compatibility, logo fetching via multiple sources.
 """
 import time
-import threading
-from datetime import datetime, timezone, date, timedelta
-import requests
+from datetime import datetime, timezone
 import yfinance as yf
 
-# ── curl_cffi session (bypasses Yahoo bot detection on cloud IPs) ─────────────
-try:
-    from curl_cffi import requests as curl_requests
-    _SESSION = curl_requests.Session(impersonate="chrome120")
-    _SESSION.headers.update({
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                      "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept-Language": "en-US,en;q=0.9",
-    })
-    print("✅ curl_cffi session active — Yahoo bot bypass enabled")
-except ImportError:
-    _SESSION = None
-    print("⚠️  curl_cffi not installed")
-
-# ── Cache (identical to original) ────────────────────────────────────────────
 _cache: dict = {}
 
 def _get(key): e=_cache.get(key); return e["data"] if e and time.time()-e["ts"]<e["ttl"] else None
@@ -38,82 +14,26 @@ def _safe(v,d=2):
     try: f=float(v); return None if f!=f else round(f,d)
     except: return None
 
-# ── yfinance ticker helper ─────────────────────────────────────────────────────
-def _ticker(symbol):
-    return yf.Ticker(symbol, session=_SESSION) if _SESSION else yf.Ticker(symbol)
-
-def _info(symbol, timeout=8) -> dict:
-    """
-    Fetch yfinance .info in a background thread with a hard timeout.
-    On Render, Yahoo sometimes blocks — this ensures the page never hangs waiting.
-    Returns {} if blocked/timed-out (NSE data fills in for Indian stocks).
-    """
-    result = {}
-    def _fetch():
-        try:
-            info = _ticker(symbol).info or {}
-            if info and len(info) > 5:
-                result.update(info)
-        except: pass
-    t = threading.Thread(target=_fetch, daemon=True)
-    t.start()
-    t.join(timeout=timeout)
-    return result
-
-# ── NSE Public API (Indian stocks only, never blocked from cloud) ─────────────
-_NSE_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                  "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Accept": "application/json, text/plain, */*",
-    "Accept-Language": "en-US,en;q=0.9",
-    "Referer": "https://www.nseindia.com/",
-}
-
-def _nse_session():
-    s = requests.Session()
-    s.headers.update(_NSE_HEADERS)
-    try: s.get("https://www.nseindia.com", timeout=6)
-    except: pass
-    return s
-
-def _nse_quote_raw(nse_sym: str) -> dict:
-    """Fetch raw NSE quote-equity JSON. Returns {} on failure."""
-    try:
-        s = _nse_session()
-        r = s.get(f"https://www.nseindia.com/api/quote-equity?symbol={nse_sym}", timeout=10)
-        return r.json() if r.status_code == 200 else {}
-    except Exception as e:
-        print(f"NSE error for {nse_sym}: {e}")
-        return {}
-
-def _nse_trade_info_raw(nse_sym: str) -> dict:
-    """Fetch NSE trade_info section (has PE, EPS, market cap). Returns {} on failure."""
-    try:
-        s = _nse_session()
-        r = s.get(
-            f"https://www.nseindia.com/api/quote-equity?symbol={nse_sym}&section=trade_info",
-            timeout=10
-        )
-        return r.json() if r.status_code == 200 else {}
-    except: return {}
-
-def _is_indian(symbol: str) -> bool:
-    return symbol.upper().endswith(".NS") or symbol.upper().endswith(".BO")
-
-def _nse_sym(symbol: str) -> str:
-    return symbol.upper().replace(".NS","").replace(".BO","")
-
-# ── Logo (identical to original) ──────────────────────────────────────────────
 def _get_logo(symbol, website=None):
+    """
+    Return a logo URL using sources that actually work in 2025:
+      1. Google Favicon API  (s=128 gives a high-res icon, free, no key needed)
+      2. Direct /favicon.ico from company website
+    Both are served via Google's infrastructure so very reliable.
+    """
     from urllib.parse import urlparse
+
     domain = None
     if website:
         try:
             parsed = urlparse(website)
             domain = parsed.netloc.replace("www.", "").strip("/")
-        except: pass
+        except Exception:
+            pass
 
+    # Known domain map for stocks whose website isn't in yfinance info
     KNOWN_DOMAINS = {
+        # Indian large-caps
         "RELIANCE": "ril.com",       "RELIANCE.NS": "ril.com",
         "TCS":      "tcs.com",       "TCS.NS":      "tcs.com",
         "HDFCBANK": "hdfcbank.com",  "HDFCBANK.NS": "hdfcbank.com",
@@ -148,6 +68,7 @@ def _get_logo(symbol, website=None):
         "HAVELLS":  "havells.com",   "VOLTAS":      "voltas.com",
         "JUBLFOOD":  "jubilantfoodworks.com",
         "ITC":      "itcportal.com", "NTPC.NS":     "ntpc.co.in",
+        # US stocks
         "AAPL":  "apple.com",   "MSFT":  "microsoft.com",
         "GOOGL": "google.com",  "GOOG":  "google.com",
         "AMZN":  "amazon.com",  "META":  "meta.com",
@@ -157,36 +78,22 @@ def _get_logo(symbol, website=None):
         "BAC":   "bankofamerica.com","V":  "visa.com",
         "WMT":   "walmart.com", "DIS":   "thewaltdisneycompany.com",
     }
+
     clean = symbol.upper().replace(".BO", "")
     if not domain:
         domain = KNOWN_DOMAINS.get(clean) or KNOWN_DOMAINS.get(clean.replace(".NS", ""))
-    if domain:
-        return f"https://www.google.com/s2/favicons?sz=128&domain_url=https://{domain}"
-    return ""
 
-# ═════════════════════════════════════════════════════════════════════════════
-# Public functions — same signatures and field names as original
-# ═════════════════════════════════════════════════════════════════════════════
+    if domain:
+        # Google's favicon service — very reliable, returns high-res PNG
+        return f"https://www.google.com/s2/favicons?sz=128&domain_url=https://{domain}"
+
+    return ""
 
 def get_profile(symbol):
     k=f"profile:{symbol}"; c=_get(k)
     if c: return c
     try:
-        info = _info(symbol, timeout=8)
-        # If yfinance timed out and it's an Indian stock, fill name from NSE
-        if not info and _is_indian(symbol):
-            nse = _nse_quote_raw(_nse_sym(symbol))
-            name = nse.get("info",{}).get("companyName", symbol)
-            ind  = nse.get("industryInfo",{})
-            data = {
-                "symbol": symbol, "name": name, "logo": _get_logo(symbol),
-                "exchange": "NSE", "industry": ind.get("industry","N/A"),
-                "sector": ind.get("sector","N/A"), "country": "India",
-                "currency": "INR", "web_url": "", "description": "",
-                "employees": None, "market_cap": None,
-            }
-            _set(k,data,86400); return data
-        # Original logic
+        info=yf.Ticker(symbol).info or {}
         website = info.get("website","")
         logo = info.get("logo_url","") or _get_logo(symbol, website)
         data={"symbol":info.get("symbol",symbol),"name":info.get("longName") or info.get("shortName",symbol),
@@ -200,47 +107,11 @@ def get_profile(symbol):
         _set(k,data,86400); return data
     except Exception as e: return {"error":str(e)}
 
-
 def get_quote(symbol):
     k=f"quote:{symbol}"; c=_get(k)
     if c: return c
     try:
-        # ── Indian stocks: NSE is primary (never blocked), yfinance is fallback ──
-        if _is_indian(symbol):
-            nse = _nse_quote_raw(_nse_sym(symbol))
-            pi  = nse.get("priceInfo", {})
-            if pi.get("lastPrice"):
-                ih   = pi.get("intraDayHighLow", {})
-                pdh  = pi.get("pdHighLow", {})
-                cur  = _safe(pi["lastPrice"])
-                prev = _safe(pi.get("previousClose", 0))
-                chg  = _safe((cur or 0) - (prev or 0))
-                chgp = _safe(((chg / prev) * 100) if prev else 0)
-                data = {
-                    "symbol":     symbol,
-                    "current":    cur,
-                    "change":     chg,
-                    "change_pct": chgp,
-                    "high":       _safe(ih.get("max") or pdh.get("max")),
-                    "low":        _safe(ih.get("min") or pdh.get("min")),
-                    "open":       _safe(pi.get("open")),
-                    "prev_close": prev,
-                    "volume":     int(float(pi.get("totalTradedVolume", 0) or 0)),
-                    "avg_volume": None,   # filled below from fast_info
-                    "currency":   "INR",
-                }
-                # avg_volume — fast_info is a lighter Yahoo endpoint, usually not blocked
-                try:
-                    fi = _ticker(symbol).fast_info
-                    data["avg_volume"] = int(getattr(fi, "three_month_average_volume", 0) or 0) or None
-                except: pass
-                _set(k, data, 30)
-                return data
-
-        # ── US stocks (or NSE failed): original yfinance logic ──
-        info = _info(symbol, timeout=8)
-        if not info:
-            return {"symbol": symbol, "error": "Rate limited. Try again shortly."}
+        info=yf.Ticker(symbol).info or {}
         cur=_safe(info.get("currentPrice") or info.get("regularMarketPrice") or info.get("previousClose",0))
         prev=_safe(info.get("previousClose") or info.get("regularMarketPreviousClose",0))
         chg=_safe((cur or 0)-(prev or 0)); chgp=_safe(((chg/prev)*100) if prev else 0)
@@ -253,8 +124,8 @@ def get_quote(symbol):
         _set(k,data,30); return data
     except Exception as e: return {"error":str(e)}
 
-
-# ── Candle helpers (identical to original, just uses _ticker() helper) ────────
+# ── Candle helpers ────────────────────────────────────────────────────────────
+# Interval for each timeframe
 _TF_INTERVAL = {
     "1D":  "5m",
     "1W":  "15m",
@@ -267,10 +138,17 @@ _TF_INTERVAL = {
 }
 
 def _tf_dates(tf):
+    """
+    Return (start_date, end_date) strings 'YYYY-MM-DD' for exact calendar ranges,
+    so that e.g. 1W always covers the last 7 calendar days regardless of weekends.
+    Returns (None, None) for MAX so yfinance uses its own full history.
+    """
+    from datetime import date, timedelta
     today = date.today()
-    end   = today + timedelta(days=1)
+    end   = today + timedelta(days=1)          # include today's partial session
+
     delta = {
-        "1D":  timedelta(days=2),
+        "1D":  timedelta(days=2),              # extra day buffer for intraday
         "1W":  timedelta(days=7),
         "1M":  timedelta(days=31),
         "3M":  timedelta(days=92),
@@ -279,6 +157,7 @@ def _tf_dates(tf):
         "5Y":  timedelta(days=365*5+2),
         "MAX": None,
     }.get(tf)
+
     if delta is None:
         return None, None
     return str(today - delta), str(end)
@@ -290,13 +169,16 @@ def get_candles(symbol, tf="3M"):
     try:
         interval = _TF_INTERVAL.get(tf, "1d")
         start, end = _tf_dates(tf)
-        ticker = _ticker(symbol)
+
+        ticker = yf.Ticker(symbol)
         if start is None:
             hist = ticker.history(period="max", interval=interval)
         else:
             hist = ticker.history(start=start, end=end, interval=interval)
+
         if hist.empty:
             return {"error": "No chart data"}
+
         candles = []
         for ts, row in hist.iterrows():
             try:
@@ -309,7 +191,9 @@ def get_candles(symbol, tf="3M"):
                     "close":  round(float(row["Close"]),  2),
                     "volume": int(row["Volume"]) if row["Volume"] == row["Volume"] else 0,
                 })
-            except: pass
+            except Exception:
+                pass
+
         data = {"symbol": symbol, "timeframe": tf, "candles": candles, "count": len(candles)}
         _set(k, data, 60)
         return data
@@ -318,22 +202,35 @@ def get_candles(symbol, tf="3M"):
 
 
 def _compute_roe(ticker_obj, info):
-    """Identical to original — tries info first, then computes from financials."""
+    """
+    Try multiple sources for ROE in order:
+      1. info['returnOnEquity']  (most stocks)
+      2. Compute from financials: Net Income / Stockholders Equity
+      3. None
+    """
+    # Source 1 — direct from info
     roe = _safe(info.get("returnOnEquity"))
     if roe is not None:
         return roe
+
+    # Source 2 — compute from financial statements
     try:
-        bs  = ticker_obj.balance_sheet
-        inc = ticker_obj.financials
+        bs   = ticker_obj.balance_sheet      # columns = quarters/years
+        inc  = ticker_obj.financials
+
         if bs is not None and not bs.empty and inc is not None and not inc.empty:
+            # Pick most recent column
             eq_keys = [k for k in bs.index if "Stockholders" in k or "equity" in k.lower() or "Equity" in k]
             ni_keys = [k for k in inc.index if "Net Income" in k or "NetIncome" in k]
+
             if eq_keys and ni_keys:
                 equity     = float(bs.loc[eq_keys[0]].iloc[0])
                 net_income = float(inc.loc[ni_keys[0]].iloc[0])
                 if equity and equity != 0:
                     return round(net_income / equity, 4)
-    except: pass
+    except Exception:
+        pass
+
     return None
 
 
@@ -341,49 +238,11 @@ def get_metrics(symbol):
     k = f"metrics:{symbol}"; c = _get(k)
     if c: return c
     try:
-        t    = _ticker(symbol)
-        info = _info(symbol, timeout=8)
+        t    = yf.Ticker(symbol)
+        info = t.info or {}
 
-        # For Indian stocks: if yfinance timed out, fill key metrics from NSE
-        if not info and _is_indian(symbol):
-            nse_sym = _nse_sym(symbol)
-            nse_raw = _nse_quote_raw(nse_sym)
-            ti_raw  = _nse_trade_info_raw(nse_sym)
-            pi      = nse_raw.get("priceInfo", {})
-            whl     = pi.get("weekHighLow", {})
-            pi_ti   = ti_raw.get("priceInfo", {})
-            ti      = ti_raw.get("marketDeptOrderBook", {}).get("tradeInfo", {})
-            mkt_cap = int(float(ti["totalMarketCap"]) * 1e7) if ti.get("totalMarketCap") else None
-            data = {
-                "symbol":          symbol,
-                "pe_ratio":        _safe(pi_ti.get("pe")),
-                "pe_forward":      None,
-                "eps_ttm":         _safe(pi_ti.get("eps")),
-                "eps_forward":     None,
-                "gross_margins":   None,
-                "profit_margins":  None,
-                "operating_margins": None,
-                "roe":             _compute_roe(t, {}),
-                "roa":             None,
-                "debt_equity":     None,
-                "current_ratio":   None,
-                "quick_ratio":     None,
-                "dividend_yield":  _safe(pi_ti.get("divYield")),
-                "week52_high":     _safe(whl.get("max")),
-                "week52_low":      _safe(whl.get("min")),
-                "beta":            None,
-                "price_to_book":   _safe(pi_ti.get("pb")),
-                "ev_ebitda":       None,
-                "market_cap":      mkt_cap,
-                "free_cashflow":   None,
-                "total_cash":      None,
-                "total_debt":      None,
-            }
-            _set(k, data, 3600)
-            return data
-
-        # Original logic (works when yfinance responds)
         roe = _compute_roe(t, info)
+
         data = {
             "symbol":             symbol,
             "pe_ratio":           _safe(info.get("trailingPE")),
@@ -414,13 +273,11 @@ def get_metrics(symbol):
     except Exception as e:
         return {"error": str(e)}
 
-
 def get_analyst(symbol):
     k=f"analyst:{symbol}"; c=_get(k)
     if c: return c
     try:
-        t    = _ticker(symbol)
-        info = _info(symbol, timeout=8)
+        t=yf.Ticker(symbol); info=t.info or {}
         sb=buy=hold=sell=ssell=0
         try:
             rdf=t.recommendations
@@ -434,7 +291,7 @@ def get_analyst(symbol):
                     elif "sell" in g: sell+=1
         except: pass
         total=sb+buy+hold+sell+ssell
-        ck=(info.get("recommendationKey","") if info else "").lower()
+        ck=info.get("recommendationKey","").lower()
         cm={"strong_buy":"Strong Buy","buy":"Buy","hold":"Hold","sell":"Sell","strong_sell":"Strong Sell"}
         consensus=cm.get(ck,"N/A")
         if consensus=="N/A" and total>0:
@@ -442,61 +299,82 @@ def get_analyst(symbol):
             consensus="Strong Buy" if bull>=0.6 else "Buy" if bull>=0.4 else "Sell" if bear>=0.4 else "Hold"
         data={"symbol":symbol,"consensus":consensus,"strong_buy":sb,"buy":buy,"hold":hold,
               "sell":sell,"strong_sell":ssell,"total":total,
-              "target_mean":_safe(info.get("targetMeanPrice") if info else None),
-              "target_high":_safe(info.get("targetHighPrice") if info else None),
-              "target_low": _safe(info.get("targetLowPrice")  if info else None),
-              "analyst_count":info.get("numberOfAnalystOpinions",0) if info else 0}
+              "target_mean":_safe(info.get("targetMeanPrice")),"target_high":_safe(info.get("targetHighPrice")),
+              "target_low":_safe(info.get("targetLowPrice")),"analyst_count":info.get("numberOfAnalystOpinions",0)}
         _set(k,data,3600); return data
     except Exception as e: return {"error":str(e)}
 
-
 def get_news(symbol):
-    """Identical to original — compatible with both old and new yfinance news formats."""
+    """
+    Fetch news with compatibility for both old and new yfinance news formats.
+    Old format: list of dicts with 'title', 'publisher', 'link', 'providerPublishTime'
+    New format (yfinance >= 0.2.37): list of dicts with nested structure
+    """
     k=f"news:{symbol}"; c=_get(k)
     if c: return c
     try:
-        raw = _ticker(symbol).news or []
+        raw = yf.Ticker(symbol).news or []
         articles = []
         for a in raw[:12]:
             try:
+                # New yfinance format wraps content inside 'content' key
                 if 'content' in a:
-                    content  = a['content']
+                    content = a['content']
                     headline = content.get('title', '') or a.get('title', '')
-                    pub      = content.get('provider', {})
-                    source   = pub.get('displayName', pub.get('name', '')) if isinstance(pub, dict) else str(pub)
-                    canonical= content.get('canonicalUrl', {})
-                    url      = canonical.get('url', '') if isinstance(canonical, dict) else content.get('url', '')
-                    if not url: url = a.get('link', '')
+                    # publisher may be nested
+                    pub = content.get('provider', {})
+                    if isinstance(pub, dict):
+                        source = pub.get('displayName', pub.get('name', ''))
+                    else:
+                        source = str(pub)
+                    # URL
+                    canonical = content.get('canonicalUrl', {})
+                    url = canonical.get('url', '') if isinstance(canonical, dict) else content.get('url', '')
+                    if not url:
+                        url = a.get('link', '')
+                    # Timestamp
                     pub_date = content.get('pubDate', '') or content.get('publishedAt', '')
-                    unix_time = 0
                     if pub_date:
                         try:
                             from datetime import datetime as dt
-                            unix_time = int(dt.fromisoformat(pub_date.replace('Z', '+00:00')).timestamp())
-                        except: pass
+                            import re
+                            # Handle ISO format
+                            ts = dt.fromisoformat(pub_date.replace('Z', '+00:00')).timestamp()
+                            unix_time = int(ts)
+                        except:
+                            unix_time = 0
+                    else:
+                        unix_time = 0
                     summary = content.get('summary', '') or content.get('description', '')
                 else:
-                    headline  = a.get('title', '')
-                    source    = a.get('publisher', '')
-                    url       = a.get('link', '')
+                    # Old yfinance format
+                    headline = a.get('title', '')
+                    source = a.get('publisher', '')
+                    url = a.get('link', '')
                     unix_time = a.get('providerPublishTime', 0)
-                    summary   = a.get('summary', '')
+                    summary = a.get('summary', '')
+
                 if headline:
-                    articles.append({"headline":headline,"source":source,"url":url,
-                                     "datetime":unix_time,"summary":summary})
-            except: continue
+                    articles.append({
+                        "headline": headline,
+                        "source": source,
+                        "url": url,
+                        "datetime": unix_time,
+                        "summary": summary
+                    })
+            except Exception:
+                continue
+
         data = {"symbol": symbol, "articles": articles, "count": len(articles)}
         _set(k, data, 300)
         return data
     except Exception as e:
         return {"error": str(e), "articles": []}
 
-
 def get_full_dashboard(symbol):
     return {"symbol":symbol,"profile":get_profile(symbol),"quote":get_quote(symbol),
             "metrics":get_metrics(symbol),"analyst":get_analyst(symbol),
             "fetched_at":datetime.now(timezone.utc).isoformat()}
-
 
 def clear_cache(symbol=None):
     global _cache
