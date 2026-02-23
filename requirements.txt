@@ -1,7 +1,6 @@
 Flask
 pandas
 openpyxl
-yfinance
 requests
 SpeechRecognition
 pyttsx3
@@ -12,4 +11,3 @@ python-dotenv
 google-generativeai
 groq
 supabase
-curl_cffi>=0.7.0
