@@ -24,7 +24,7 @@ def _supa() -> Client:
         raise RuntimeError("SUPABASE_URL and SUPABASE_KEY must be set in .env")
     return create_client(_SUPABASE_URL, _SUPABASE_KEY)
 app = Flask(__name__)
-app.secret_key = os.environ.get("9e45618318df240f85c0e4941f81ba48c08130d8406a8788ee6d1a3d1e0c9a23", "fallback-dev-key")
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "fallback-dev-key")
 
 @app.route('/health')
 def health():
