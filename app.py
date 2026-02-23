@@ -882,4 +882,4 @@ def process_user_input(user_input):
         return error_msg
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5002, debug=False)
+    app.run(debug=False)
