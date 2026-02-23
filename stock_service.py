@@ -3,8 +3,19 @@ stock_service.py — yfinance backend, no API key required.
 Fixed: news format compatibility, logo fetching via multiple sources.
 """
 import time
+import random
 from datetime import datetime, timezone
 import yfinance as yf
+
+# ── curl_cffi session — required by yfinance 0.2.50+ to bypass Yahoo bot detection
+# This works from cloud servers (Render, AWS etc.) unlike plain requests.Session
+try:
+    from curl_cffi import requests as curl_requests
+    _YF_SESSION = curl_requests.Session(impersonate="chrome120")
+    print("✅ curl_cffi session active — Yahoo bot bypass enabled")
+except ImportError:
+    _YF_SESSION = None
+    print("⚠️  curl_cffi not installed — yfinance will manage session itself")
 
 _cache: dict = {}
 
@@ -93,7 +104,7 @@ def get_profile(symbol):
     k=f"profile:{symbol}"; c=_get(k)
     if c: return c
     try:
-        info=yf.Ticker(symbol).info or {}
+        info=yf.Ticker(symbol, session=_YF_SESSION).info or {} if _YF_SESSION else yf.Ticker(symbol).info or {}
         website = info.get("website","")
         logo = info.get("logo_url","") or _get_logo(symbol, website)
         data={"symbol":info.get("symbol",symbol),"name":info.get("longName") or info.get("shortName",symbol),
@@ -111,7 +122,7 @@ def get_quote(symbol):
     k=f"quote:{symbol}"; c=_get(k)
     if c: return c
     try:
-        info=yf.Ticker(symbol).info or {}
+        info=yf.Ticker(symbol, session=_YF_SESSION).info or {} if _YF_SESSION else yf.Ticker(symbol).info or {}
         cur=_safe(info.get("currentPrice") or info.get("regularMarketPrice") or info.get("previousClose",0))
         prev=_safe(info.get("previousClose") or info.get("regularMarketPreviousClose",0))
         chg=_safe((cur or 0)-(prev or 0)); chgp=_safe(((chg/prev)*100) if prev else 0)
@@ -121,7 +132,7 @@ def get_quote(symbol):
               "open":_safe(info.get("open") or info.get("regularMarketOpen")),
               "prev_close":prev,"volume":info.get("volume",0),"avg_volume":info.get("averageVolume"),
               "currency":info.get("currency","INR")}
-        _set(k,data,30); return data
+        _set(k,data,120); return data
     except Exception as e: return {"error":str(e)}
 
 # ── Candle helpers ────────────────────────────────────────────────────────────
@@ -170,7 +181,7 @@ def get_candles(symbol, tf="3M"):
         interval = _TF_INTERVAL.get(tf, "1d")
         start, end = _tf_dates(tf)
 
-        ticker = yf.Ticker(symbol)
+        ticker = yf.Ticker(symbol, session=_YF_SESSION) if _YF_SESSION else yf.Ticker(symbol)
         if start is None:
             hist = ticker.history(period="max", interval=interval)
         else:
@@ -277,7 +288,7 @@ def get_analyst(symbol):
     k=f"analyst:{symbol}"; c=_get(k)
     if c: return c
     try:
-        t=yf.Ticker(symbol); info=t.info or {}
+        t=yf.Ticker(symbol, session=_YF_SESSION) if _YF_SESSION else yf.Ticker(symbol); info=t.info or {}
         sb=buy=hold=sell=ssell=0
         try:
             rdf=t.recommendations
@@ -313,7 +324,7 @@ def get_news(symbol):
     k=f"news:{symbol}"; c=_get(k)
     if c: return c
     try:
-        raw = yf.Ticker(symbol).news or []
+        raw = (yf.Ticker(symbol, session=_YF_SESSION) if _YF_SESSION else yf.Ticker(symbol)).news or []
         articles = []
         for a in raw[:12]:
             try:

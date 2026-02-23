@@ -12,3 +12,4 @@ python-dotenv
 google-generativeai
 groq
 supabase
+curl_cffi>=0.7.0
