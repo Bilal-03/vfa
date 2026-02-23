@@ -15,9 +15,11 @@ def si_dashboard():
     sym = _sym()
     if not sym: return jsonify({"error": "Missing symbol"}), 400
     data = ss.get_full_dashboard(sym)
-    # Only 502 if there's a hard failure AND no price at all
-    if "error" in data and not data.get("quote", {}).get("current"):
-        return jsonify({"error": data["error"]}), 502
+    # Only 502 if there is genuinely no price data at all
+    has_price = data.get("quote", {}).get("current") is not None
+    if not has_price:
+        err = data.get("error") or data.get("quote", {}).get("error", "Could not load stock data")
+        return jsonify({"error": err}), 502
     return jsonify(data), 200
 
 @stock_bp.route("/si/quote")
