@@ -215,6 +215,12 @@ def get_quote(symbol):
         nse = _nse_fetch(_nse_symbol(sym_up))
         if nse and nse.get("current"):
             data.update(nse)
+            # avg_volume not available from NSE — grab from fast_info (quick, non-blocking)
+            try:
+                fi = _yf_ticker(symbol).fast_info
+                avg_vol = int(getattr(fi, "three_month_average_volume", 0) or 0)
+                if avg_vol: data["avg_volume"] = avg_vol
+            except: pass
             _set(k, data, 120)
             return data
 
@@ -228,10 +234,11 @@ def get_quote(symbol):
             chgp = _safe(((cur - prev) / prev) * 100) if prev else None
             data.update({
                 "current": cur, "prev_close": prev, "change": chg, "change_pct": chgp,
-                "open":    _safe(getattr(fi, "open", None)),
-                "high":    _safe(getattr(fi, "day_high", None)),
-                "low":     _safe(getattr(fi, "day_low", None)),
-                "volume":  int(getattr(fi, "three_month_average_volume", 0) or 0),
+                "open":       _safe(getattr(fi, "open", None)),
+                "high":       _safe(getattr(fi, "day_high", None)),
+                "low":        _safe(getattr(fi, "day_low", None)),
+                "volume":     int(getattr(fi, "last_volume", 0) or 0),
+                "avg_volume": int(getattr(fi, "three_month_average_volume", 0) or 0),
                 "market_cap":  getattr(fi, "market_cap", None),
                 "week52_high": _safe(getattr(fi, "year_high", None)),
                 "week52_low":  _safe(getattr(fi, "year_low", None)),
@@ -325,10 +332,10 @@ def get_metrics(symbol):
         })
         data.update(ti)  # pe_ratio, eps_ttm, price_to_book, dividend_yield, market_cap
 
-        # Enrich with yfinance (non-blocking)
+        # Enrich with yfinance (non-blocking, 6s cap)
         info = _yf_info_quick(symbol, timeout_sec=6)
+        t    = _yf_ticker(symbol)
         if info:
-            # Use yfinance values, fall back to NSE values
             def _pick(yf_key, existing_key=None):
                 return _safe(info.get(yf_key)) or data.get(existing_key or yf_key)
             data.update({
@@ -339,7 +346,7 @@ def get_metrics(symbol):
                 "gross_margins":     _safe(info.get("grossMargins")),
                 "profit_margins":    _safe(info.get("profitMargins")),
                 "operating_margins": _safe(info.get("operatingMargins")),
-                "roe":               _safe(info.get("returnOnEquity")),
+                "roe":               _compute_roe(t, info),
                 "roa":               _safe(info.get("returnOnAssets")),
                 "debt_equity":       _safe(info.get("debtToEquity")),
                 "current_ratio":     _safe(info.get("currentRatio")),
@@ -355,6 +362,9 @@ def get_metrics(symbol):
                 "total_cash":        info.get("totalCash"),
                 "total_debt":        info.get("totalDebt"),
             })
+        else:
+            # yfinance timed out — compute ROE from financials directly (separate endpoint, less blocked)
+            data["roe"] = _compute_roe(t, {})
         _set(k, data, 3600); return data
 
     # US stocks
