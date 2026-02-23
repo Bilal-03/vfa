@@ -139,6 +139,33 @@ def portfolio_sync():
 
 
 
+
+@app.route('/api/portfolio/debug')
+def portfolio_debug():
+    """Debug: show raw Supabase data for a username (no auth — remove in prod)."""
+    username = (request.args.get('username') or '').strip()
+    if not username:
+        return jsonify({'error': 'Pass ?username=YourName'}), 400
+    try:
+        sb = _supa()
+        # Check users table
+        users = sb.table('users').select('*').ilike('username', username).execute()
+        # Check portfolios table - try without ordering first
+        portfolios = sb.table('portfolios').select('*').ilike('username', username).execute()
+        # Also try exact match
+        portfolios_exact = sb.table('portfolios').select('*').eq('username', username).execute()
+        # Get all usernames in portfolios table (first 20)
+        all_users = sb.table('portfolios').select('username').limit(20).execute()
+        return jsonify({
+            'queried_username': username,
+            'users_table': users.data,
+            'portfolios_ilike': portfolios.data,
+            'portfolios_exact': portfolios_exact.data,
+            'all_portfolio_usernames': [r['username'] for r in all_users.data],
+        })
+    except Exception as e:
+        return jsonify({'error': str(e), 'type': type(e).__name__}), 500
+
 from stock_routes import stock_bp
 app.register_blueprint(stock_bp)
 
@@ -420,9 +447,27 @@ def get_stock_weekly(query):
             f"📉 <strong>Week Low:</strong> ₹{d.get('week_low',0):.2f}<br>"
             f"💹 <strong>Change:</strong> {d.get('week_change',0):+.2f} ({d.get('week_pct',0):+.2f}%)")
 
+def _is_mobile(request):
+    """Detect mobile/tablet devices from User-Agent."""
+    ua = request.headers.get('User-Agent', '').lower()
+    mobile_keywords = [
+        'mobile', 'android', 'iphone', 'ipad', 'ipod', 'blackberry',
+        'windows phone', 'tablet', 'silk', 'kindle', 'opera mini',
+        'opera mobi', 'webos', 'symbian'
+    ]
+    return any(kw in ua for kw in mobile_keywords)
+
 @app.route("/")
 def index():
+    if _is_mobile(request):
+        return render_template('chat_mobile.html')
     return render_template('chat_enhanced.html')
+
+
+@app.route("/portfolio")
+def portfolio_mobile():
+    """Dedicated mobile portfolio page — always serves the mobile portfolio UI."""
+    return render_template('portfolio_mobile.html')
 
 @app.route("/get_stock", methods=["POST"])
 def get_stock_endpoint():
@@ -433,6 +478,33 @@ def get_stock_endpoint():
 @app.route("/classic")
 def classic():
     return render_template('chat.html')
+
+
+@app.route("/chat", methods=["POST"])
+def chat():
+    """Alias for /get — used by the mobile interface."""
+    user_input = request.form.get("msg", "")
+    return process_user_input(user_input)
+
+@app.route("/currency_convert")
+def currency_convert():
+    try:
+        from_currency = request.args.get("from", "USD").upper()
+        to_currency   = request.args.get("to", "INR").upper()
+        amount        = float(request.args.get("amount", 1))
+        url = f"https://api.frankfurter.app/latest?from={from_currency}&to={to_currency}"
+        r   = requests.get(url, timeout=8)
+        r.raise_for_status()
+        data = r.json()
+        rate = data["rates"].get(to_currency)
+        if rate is None:
+            return jsonify({"error": "Rate not found"}), 404
+        return jsonify({
+            "from": from_currency, "to": to_currency, "amount": amount,
+            "rate": rate, "converted": round(amount * rate, 4), "date": data.get("date", ""),
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/get", methods=["POST"])
 def get_response():
@@ -448,7 +520,19 @@ def get_response():
 
 @app.route("/market")
 def market():
-    return jsonify(get_market_indices())
+    import time as _t
+    cache = getattr(market, '_cache', None)
+    # Use cache if fresh (60s) AND it has more than 2 indices (i.e. NSE returned full data)
+    if cache and (_t.time() - cache['ts']) < 60 and len(cache['data'].get('indices', [])) > 2:
+        return jsonify(cache['data'])
+    data = get_market_indices()
+    # Only cache if we got a good full result (more than 2 indices = NSE worked)
+    if len(data.get('indices', [])) > 2:
+        market._cache = {'ts': _t.time(), 'data': data}
+    elif cache:
+        # NSE failed this time — return the last good cache even if stale
+        return jsonify(cache['data'])
+    return jsonify(data)
 
 @app.route("/top_gainers")
 def top_gainers():
