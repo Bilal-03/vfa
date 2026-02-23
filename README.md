@@ -4,37 +4,6 @@
 
 ---
 
-## 📸 Demo
-
-
-### 🏠 Home Dashboard
-<!-- Replace with your screenshot -->
-![Home Dashboard](screenshots/home.png)
-
-### 📈 Stock Information
-![Stock Information](screenshots/stock.png)
-
-### 🧮 Calculators
-![EMI Calculator](screenshots/emi.png)
-![SIP Calculator](screenshots/sip.png)
-
-### 💰 Gold & Silver Prices
-![Metals](screenshots/metals.png)
-
-### 💱 Currency Rates
-![Currency](screenshots/currency.png)
-
-### 📰 Market News
-![Market News](screenshots/news.png)
-
-### 📊 Mutual Fund Search
-![Mutual Funds](screenshots/mf.png)
-
-### 📖 Finance Glossary
-![Glossary](screenshots/glossary.png)
-
----
-
 ## ✨ Features
 
 ### 🔧 Tools & Calculators
