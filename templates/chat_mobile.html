@@ -909,6 +909,26 @@ document.addEventListener('DOMContentLoaded', function() {
             if (e.key === 'Enter') { e.preventDefault(); sendChatFromInput(); }
         });
     }
+    
+    // Handle URL parameters for navigation from portfolio page
+    const urlParams = new URLSearchParams(window.location.search);
+    const screenParam = urlParams.get('screen');
+    if (screenParam) {
+        const screenMap = {
+            'stocks': 'stockScreen',
+            'calc': 'calcScreen',
+            'more': 'moreScreen'
+        };
+        const targetScreen = screenMap[screenParam];
+        if (targetScreen) {
+            setTimeout(() => {
+                showScreen(targetScreen);
+                const navButton = document.getElementById('nav-' + screenParam);
+                if (navButton) setNavActive(navButton);
+            }, 100);
+        }
+    }
+    
     // Init
     refreshTicker();
     refreshMarketWidgets();
