@@ -26,6 +26,7 @@ def _supa() -> Client:
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "fallback-dev-key")
 
+# For uptime robot
 @app.route('/health')
 def health():
     return 'ok', 200
