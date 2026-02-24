@@ -26,7 +26,6 @@ def _supa() -> Client:
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "fallback-dev-key")
 
-# For uptime robot
 @app.route('/health')
 def health():
     return 'ok', 200
@@ -463,12 +462,6 @@ def index():
     if _is_mobile(request):
         return render_template('chat_mobile.html')
     return render_template('chat_enhanced.html')
-
-
-@app.route("/portfolio")
-def portfolio_mobile():
-    """Dedicated mobile portfolio page — always serves the mobile portfolio UI."""
-    return render_template('portfolio_mobile.html')
 
 @app.route("/get_stock", methods=["POST"])
 def get_stock_endpoint():

@@ -168,7 +168,7 @@
                 <div class="quick-icon" style="background:#f0f9ff;color:#0284c7;"><i class="fas fa-newspaper"></i></div>
                 <span>News</span>
             </button>
-            <button class="quick-btn" onclick="window.location.href='/portfolio'">
+            <button class="quick-btn" onclick="showScreen('portfolioScreen');setNavActive(document.getElementById('nav-portfolio'));if(typeof FinTracker!=='undefined')FinTracker.startPortfolioRefresh();">
                 <div class="quick-icon" style="background:#fff7ed;color:#d97706;"><i class="fas fa-briefcase"></i></div>
                 <span>Portfolio</span>
             </button>
@@ -682,9 +682,9 @@
     <button class="nav-item" id="nav-calc" onclick="showScreen('calcScreen'); setNavActive(this)">
         <i class="fas fa-calculator"></i><span>Calc</span>
     </button>
-    <a href="/portfolio" class="nav-item" id="nav-portfolio">
+    <button class="nav-item" id="nav-portfolio" onclick="showScreen('portfolioScreen'); setNavActive(this); if(typeof FinTracker!=='undefined')FinTracker.startPortfolioRefresh();">
         <i class="fas fa-briefcase"></i><span>Portfolio</span>
-    </a>
+    </button>
     <button class="nav-item" id="nav-more" onclick="showScreen('moreScreen'); setNavActive(this)">
         <i class="fas fa-ellipsis-h"></i><span>More</span>
     </button>
@@ -910,13 +910,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Handle URL parameters for navigation from portfolio page
+    // Handle URL parameters for navigation
     const urlParams = new URLSearchParams(window.location.search);
     const screenParam = urlParams.get('screen');
     if (screenParam) {
         const screenMap = {
             'stocks': 'stockScreen',
             'calc': 'calcScreen',
+            'portfolio': 'portfolioScreen',
             'more': 'moreScreen'
         };
         const targetScreen = screenMap[screenParam];
@@ -925,6 +926,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 showScreen(targetScreen);
                 const navButton = document.getElementById('nav-' + screenParam);
                 if (navButton) setNavActive(navButton);
+                // Start portfolio refresh if navigating to portfolio
+                if (screenParam === 'portfolio' && typeof FinTracker !== 'undefined') {
+                    FinTracker.startPortfolioRefresh();
+                }
             }, 100);
         }
     }
@@ -1784,7 +1789,7 @@ window.showToast = function(msg, type = 'success') {
             <div class="ham-item-text"><div class="ham-item-title">Stocks</div><div class="ham-item-sub">Live NSE & US stock data</div></div>
             <i class="fas fa-chevron-right ham-item-arrow"></i>
         </button>
-        <button class="ham-item" onclick="closeHamMenu();window.location.href='/portfolio'">
+        <button class="ham-item" onclick="closeHamMenu();showScreen('portfolioScreen');setNavActive(document.getElementById('nav-portfolio'));if(typeof FinTracker!=='undefined')FinTracker.startPortfolioRefresh();">
             <div class="ham-item-icon" style="background:#fff7ed;color:#d97706;"><i class="fas fa-briefcase"></i></div>
             <div class="ham-item-text"><div class="ham-item-title">Portfolio</div><div class="ham-item-sub">Track your investments</div></div>
             <i class="fas fa-chevron-right ham-item-arrow"></i>
