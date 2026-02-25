@@ -3,43 +3,6 @@ import traceback
 import yfinance as yf
 from datetime import datetime, time as dt_time
 import pytz
-import time
-import threading
-
-# Rate limiting for yfinance
-_yf_request_times = []
-_yf_lock = threading.Lock()
-MAX_YF_REQUESTS_PER_MINUTE = 30
-MIN_YF_REQUEST_INTERVAL = 2.0
-
-def _yf_rate_limit_check():
-    """Check if we're within rate limits for yfinance, sleep if necessary"""
-    with _yf_lock:
-        now = time.time()
-        
-        # Remove timestamps older than 1 minute
-        cutoff = now - 60
-        _yf_request_times[:] = [t for t in _yf_request_times if t > cutoff]
-        
-        # Check if we've hit the per-minute limit
-        if len(_yf_request_times) >= MAX_YF_REQUESTS_PER_MINUTE:
-            oldest = _yf_request_times[0]
-            sleep_time = 60 - (now - oldest)
-            if sleep_time > 0:
-                print(f"⚠️ Rate limit reached, sleeping {sleep_time:.1f}s")
-                time.sleep(sleep_time)
-                return _yf_rate_limit_check()
-        
-        # Check minimum interval between requests
-        if _yf_request_times:
-            last_request = _yf_request_times[-1]
-            time_since_last = now - last_request
-            if time_since_last < MIN_YF_REQUEST_INTERVAL:
-                sleep_time = MIN_YF_REQUEST_INTERVAL - time_since_last
-                time.sleep(sleep_time)
-        
-        # Record this request
-        _yf_request_times.append(time.time())
 
 # ─── NSE Session helper ───────────────────────────────────────────────────────
 def _nse_session():
@@ -86,7 +49,6 @@ def _fetch_nse_all_indices(session=None):
 def _yahoo_index(ticker_symbol, display_name):
     """Fetch a single index from Yahoo Finance. Returns dict or None."""
     try:
-        _yf_rate_limit_check()  # Rate limiting
         hist = yf.Ticker(ticker_symbol).history(period='5d')
         if hist.empty or len(hist) < 2:
             return None
@@ -157,7 +119,7 @@ def get_market_indices():
             except Exception as e:
                 print(f"  ⚠ Parse error for {nse_name}: {e}")
 
-    # Fallback to Yahoo for any NSE index not found (WITH RATE LIMITING)
+    # Fallback to Yahoo for any NSE index not found
     YAHOO_FALLBACK = {
         'NIFTY 50':           '^NSEI',
         'NIFTY BANK':         '^NSEBANK',
@@ -247,7 +209,7 @@ def get_nifty_turnover():
 def _get_all_nifty50_data():
     """
     Fetch per-stock data for NIFTY 50 constituents.
-    Tries NSE equity-stockIndices API first, falls back to Yahoo WITH RATE LIMITING.
+    Tries NSE equity-stockIndices API first, falls back to Yahoo.
     Returns list of dicts: {symbol, price, change, pChange, volume}
     """
     result = []
@@ -280,42 +242,27 @@ def _get_all_nifty50_data():
     except Exception as e:
         print(f"  ⚠ NSE equity-stockIndices failed: {e}")
 
-    # Yahoo fallback WITH RATE LIMITING
+    # Yahoo fallback
     print("  ↩ Falling back to Yahoo Finance for stock data …")
-    symbols = _get_nifty50_symbols()
-    
-    # Process in batches to avoid rate limiting
-    batch_size = 5
-    for i in range(0, len(symbols), batch_size):
-        batch = symbols[i:i+batch_size]
-        for symbol in batch:
-            try:
-                _yf_rate_limit_check()  # Rate limiting
-                hist = yf.Ticker(f"{symbol}.NS").history(period='5d')
-                if hist.empty or len(hist) < 2:
-                    continue
-                current    = float(hist['Close'].iloc[-1])
-                prev_close = float(hist['Close'].iloc[-2])
-                change     = current - prev_close
-                pct        = (change / prev_close * 100) if prev_close else 0
-                volume     = int(hist['Volume'].iloc[-1])
-                result.append({
-                    'symbol':  symbol,
-                    'price':   round(current, 2),
-                    'change':  round(change, 2),
-                    'pChange': round(pct, 2),
-                    'volume':  volume,
-                })
-            except Exception as e:
-                if "rate" in str(e).lower() or "429" in str(e):
-                    print(f"  ⚠️ Rate limited, adding delay...")
-                    time.sleep(5)
+    for symbol in _get_nifty50_symbols():
+        try:
+            hist = yf.Ticker(f"{symbol}.NS").history(period='5d')
+            if hist.empty or len(hist) < 2:
                 continue
-        
-        # Small delay between batches
-        if i + batch_size < len(symbols):
-            time.sleep(1)
-    
+            current    = float(hist['Close'].iloc[-1])
+            prev_close = float(hist['Close'].iloc[-2])
+            change     = current - prev_close
+            pct        = (change / prev_close * 100) if prev_close else 0
+            volume     = int(hist['Volume'].iloc[-1])
+            result.append({
+                'symbol':  symbol,
+                'price':   round(current, 2),
+                'change':  round(change, 2),
+                'pChange': round(pct, 2),
+                'volume':  volume,
+            })
+        except Exception:
+            continue
     print(f"  ✓ Yahoo returned {len(result)} stocks")
     return result
 

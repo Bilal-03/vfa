@@ -1,86 +1,18 @@
 """
-stock_service.py — yfinance backend with RATE LIMITING FIXES
-Fixed: news format compatibility, logo fetching, and aggressive rate limit handling
+stock_service.py — yfinance backend, no API key required.
+Fixed: news format compatibility, logo fetching via multiple sources.
 """
 import time
 from datetime import datetime, timezone
 import yfinance as yf
-from functools import wraps
-import threading
 
 _cache: dict = {}
-_request_times = []  # Track request timestamps for rate limiting
-_lock = threading.Lock()
 
-# Rate limiting configuration
-MAX_REQUESTS_PER_MINUTE = 30  # Conservative limit
-MIN_REQUEST_INTERVAL = 2.0     # Minimum 2 seconds between requests
-
-def _get(key): 
-    e=_cache.get(key)
-    return e["data"] if e and time.time()-e["ts"]<e["ttl"] else None
-
-def _set(key,data,ttl): 
-    _cache[key]={"ts":time.time(),"data":data,"ttl":ttl}
-
+def _get(key): e=_cache.get(key); return e["data"] if e and time.time()-e["ts"]<e["ttl"] else None
+def _set(key,data,ttl): _cache[key]={"ts":time.time(),"data":data,"ttl":ttl}
 def _safe(v,d=2):
-    try: 
-        f=float(v)
-        return None if f!=f else round(f,d)
-    except: 
-        return None
-
-def _rate_limit_check():
-    """Check if we're within rate limits, sleep if necessary"""
-    with _lock:
-        now = time.time()
-        
-        # Remove timestamps older than 1 minute
-        cutoff = now - 60
-        _request_times[:] = [t for t in _request_times if t > cutoff]
-        
-        # Check if we've hit the per-minute limit
-        if len(_request_times) >= MAX_REQUESTS_PER_MINUTE:
-            oldest = _request_times[0]
-            sleep_time = 60 - (now - oldest)
-            if sleep_time > 0:
-                print(f"⚠️ Rate limit reached, sleeping {sleep_time:.1f}s")
-                time.sleep(sleep_time)
-                return _rate_limit_check()  # Recheck after sleep
-        
-        # Check minimum interval between requests
-        if _request_times:
-            last_request = _request_times[-1]
-            time_since_last = now - last_request
-            if time_since_last < MIN_REQUEST_INTERVAL:
-                sleep_time = MIN_REQUEST_INTERVAL - time_since_last
-                time.sleep(sleep_time)
-        
-        # Record this request
-        _request_times.append(time.time())
-
-def rate_limited(func):
-    """Decorator to add rate limiting and exponential backoff to yfinance calls"""
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        max_retries = 3
-        base_delay = 2
-        
-        for attempt in range(max_retries):
-            try:
-                _rate_limit_check()
-                return func(*args, **kwargs)
-            except Exception as e:
-                error_str = str(e).lower()
-                if "rate" in error_str or "429" in error_str or "too many" in error_str:
-                    if attempt < max_retries - 1:
-                        delay = base_delay * (2 ** attempt)  # Exponential backoff
-                        print(f"⚠️ Rate limit hit, retry {attempt+1}/{max_retries} in {delay}s")
-                        time.sleep(delay)
-                        continue
-                raise
-        return {"error": "Rate limit exceeded after retries"}
-    return wrapper
+    try: f=float(v); return None if f!=f else round(f,d)
+    except: return None
 
 def _get_logo(symbol, website=None):
     """
@@ -136,7 +68,6 @@ def _get_logo(symbol, website=None):
         "HAVELLS":  "havells.com",   "VOLTAS":      "voltas.com",
         "JUBLFOOD":  "jubilantfoodworks.com",
         "ITC":      "itcportal.com", "NTPC.NS":     "ntpc.co.in",
-        "DELHIVERY": "delhivery.com", "DELHIVERY.NS": "delhivery.com",
         # US stocks
         "AAPL":  "apple.com",   "MSFT":  "microsoft.com",
         "GOOGL": "google.com",  "GOOG":  "google.com",
@@ -158,7 +89,6 @@ def _get_logo(symbol, website=None):
 
     return ""
 
-@rate_limited
 def get_profile(symbol):
     k=f"profile:{symbol}"; c=_get(k)
     if c: return c
@@ -174,14 +104,9 @@ def get_profile(symbol):
               "web_url": website,
               "description":(info.get("longBusinessSummary") or "")[:400],
               "employees":info.get("fullTimeEmployees"),"market_cap":info.get("marketCap")}
-        # INCREASED CACHE TIME after market hours
-        ttl = 3600 if _is_market_hours() else 14400  # 1hr during market, 4hrs after
-        _set(k,data,ttl)
-        return data
-    except Exception as e: 
-        return {"error":str(e)}
+        _set(k,data,86400); return data
+    except Exception as e: return {"error":str(e)}
 
-@rate_limited
 def get_quote(symbol):
     k=f"quote:{symbol}"; c=_get(k)
     if c: return c
@@ -196,25 +121,8 @@ def get_quote(symbol):
               "open":_safe(info.get("open") or info.get("regularMarketOpen")),
               "prev_close":prev,"volume":info.get("volume",0),"avg_volume":info.get("averageVolume"),
               "currency":info.get("currency","INR")}
-        # INCREASED CACHE TIME after market hours
-        ttl = 30 if _is_market_hours() else 600  # 30s during market, 10min after
-        _set(k,data,ttl)
-        return data
-    except Exception as e: 
-        return {"error":str(e)}
-
-def _is_market_hours():
-    """Check if it's currently market hours (NSE: Mon-Fri 09:15-15:30 IST)"""
-    try:
-        import pytz
-        from datetime import datetime, time as dt_time
-        ist = pytz.timezone('Asia/Kolkata')
-        now = datetime.now(ist)
-        if now.weekday() >= 5:  # Weekend
-            return False
-        return dt_time(9, 15) <= now.time() <= dt_time(15, 30)
-    except:
-        return False
+        _set(k,data,30); return data
+    except Exception as e: return {"error":str(e)}
 
 # ── Candle helpers ────────────────────────────────────────────────────────────
 # Interval for each timeframe
@@ -254,7 +162,7 @@ def _tf_dates(tf):
         return None, None
     return str(today - delta), str(end)
 
-@rate_limited
+
 def get_candles(symbol, tf="3M"):
     k = f"candle:{symbol}:{tf}"; c = _get(k)
     if c: return c
@@ -277,22 +185,21 @@ def get_candles(symbol, tf="3M"):
                 unix = int(ts.timestamp()) if hasattr(ts, "timestamp") else int(ts.value // 1_000_000_000)
                 candles.append({
                     "time":   unix,
-                    "open":   _safe(row["Open"]),
-                    "high":   _safe(row["High"]),
-                    "low":    _safe(row["Low"]),
-                    "close":  _safe(row["Close"]),
+                    "open":   round(float(row["Open"]),   2),
+                    "high":   round(float(row["High"]),   2),
+                    "low":    round(float(row["Low"]),    2),
+                    "close":  round(float(row["Close"]),  2),
                     "volume": int(row["Volume"]) if row["Volume"] == row["Volume"] else 0,
                 })
             except Exception:
-                continue
+                pass
 
-        data = {"symbol": symbol, "timeframe": tf, "candles": candles}
-        # INCREASED CACHE TIME for candles after market hours
-        ttl = 60 if _is_market_hours() else 3600  # 1min during market, 1hr after
-        _set(k, data, ttl)
+        data = {"symbol": symbol, "timeframe": tf, "candles": candles, "count": len(candles)}
+        _set(k, data, 60)
         return data
     except Exception as e:
         return {"error": str(e)}
+
 
 def _compute_roe(ticker_obj, info):
     """
@@ -326,7 +233,7 @@ def _compute_roe(ticker_obj, info):
 
     return None
 
-@rate_limited
+
 def get_metrics(symbol):
     k = f"metrics:{symbol}"; c = _get(k)
     if c: return c
@@ -361,14 +268,11 @@ def get_metrics(symbol):
             "total_cash":         info.get("totalCash"),
             "total_debt":         info.get("totalDebt"),
         }
-        # INCREASED CACHE TIME after market hours
-        ttl = 3600 if _is_market_hours() else 14400  # 1hr during market, 4hrs after
-        _set(k, data, ttl)
+        _set(k, data, 3600)
         return data
     except Exception as e:
         return {"error": str(e)}
 
-@rate_limited
 def get_analyst(symbol):
     k=f"analyst:{symbol}"; c=_get(k)
     if c: return c
@@ -397,14 +301,9 @@ def get_analyst(symbol):
               "sell":sell,"strong_sell":ssell,"total":total,
               "target_mean":_safe(info.get("targetMeanPrice")),"target_high":_safe(info.get("targetHighPrice")),
               "target_low":_safe(info.get("targetLowPrice")),"analyst_count":info.get("numberOfAnalystOpinions",0)}
-        # INCREASED CACHE TIME after market hours
-        ttl = 3600 if _is_market_hours() else 14400  # 1hr during market, 4hrs after
-        _set(k,data,ttl)
-        return data
-    except Exception as e: 
-        return {"error":str(e)}
+        _set(k,data,3600); return data
+    except Exception as e: return {"error":str(e)}
 
-@rate_limited
 def get_news(symbol):
     """
     Fetch news with compatibility for both old and new yfinance news formats.
@@ -467,9 +366,7 @@ def get_news(symbol):
                 continue
 
         data = {"symbol": symbol, "articles": articles, "count": len(articles)}
-        # INCREASED CACHE TIME for news after market hours
-        ttl = 300 if _is_market_hours() else 1800  # 5min during market, 30min after
-        _set(k, data, ttl)
+        _set(k, data, 300)
         return data
     except Exception as e:
         return {"error": str(e), "articles": []}
