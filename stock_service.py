@@ -226,7 +226,7 @@ def _get_logo(symbol, website=None):
         domain = KNOWN_DOMAINS.get(clean) or KNOWN_DOMAINS.get(clean.replace(".NS", ""))
 
     if domain:
-        return f"https://www.google.com/s2/favicons?sz=128&domain_url=https://{domain}"
+        return f"https://logo.clearbit.com/{domain}"
     return ""
 
 
@@ -246,10 +246,25 @@ def get_profile(symbol):
     currency         = info.get("currency") or _symbol_currency(symbol)
     default_country  = "India" if currency == "INR" else "USA"
     default_exchange = "NSE" if symbol.endswith(".NS") else ("BSE" if symbol.endswith(".BO") else "NASDAQ")
+
+    # Extract domain from website or KNOWN_DOMAINS for fallback logo chain in frontend
+    from urllib.parse import urlparse
+    logo_domain = None
+    if website:
+        try:
+            logo_domain = urlparse(website).netloc.replace("www.", "").strip("/")
+        except Exception:
+            pass
+    if not logo_domain:
+        # Try to derive domain from the Clearbit logo URL we just built
+        if logo and "clearbit.com" in logo:
+            logo_domain = logo.replace("https://logo.clearbit.com/", "")
+
     data = {
         "symbol":      info.get("symbol", symbol),
         "name":        info.get("longName") or info.get("shortName", symbol),
         "logo":        logo,
+        "logo_domain": logo_domain or "",
         "exchange":    info.get("exchange", default_exchange),
         "industry":    info.get("industry", "N/A"),
         "sector":      info.get("sector", "N/A"),

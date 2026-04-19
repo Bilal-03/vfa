@@ -99,13 +99,24 @@ const FinTracker = (() => {
         setTimeout(()=>{t.classList.remove('pt-toast-show');setTimeout(()=>t.remove(),350);},2800);
     }
 
-    // ── Logo ──────────────────────────────────────────────────────────────────
-    function mkLogo(name, logo, sz='36px', r='10px') {
-        const init=(name||'??').split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
-        const id='i'+Math.random().toString(36).slice(2,8), fb='f'+Math.random().toString(36).slice(2,8);
-        if(logo) return `<img src="${logo}" id="${id}" style="width:${sz};height:${sz};border-radius:${r};object-fit:contain;background:#fff;border:1px solid #e2e8f0;padding:4px;display:block;"
-            onerror="var e=document.getElementById('${id}'),f=document.getElementById('${fb}');if(e)e.style.display='none';if(f)f.style.display='flex';">
-            <div id="${fb}" class="pt-logo-fb" style="width:${sz};height:${sz};border-radius:${r};display:none;">${init}</div>`;
+    // ── Logo — 3-tier fallback: Clearbit → DuckDuckGo → letter tile ─────────
+    function mkLogo(name, logo, domain, sz='36px', r='10px') {
+        const init = (name||'??').split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+        const id = 'logo_' + Math.random().toString(36).slice(2,8);
+        const fb = 'fblg_' + Math.random().toString(36).slice(2,8);
+
+        // Build the fallback chain
+        const ddg = domain ? `https://icons.duckduckgo.com/ip3/${domain}.ico` : null;
+        const showFallbackFn = `var f=document.getElementById('${fb}');if(f){f.style.display='flex';}this.style.display='none';`;
+        const onerrorAttr = ddg
+            ? `this.onerror=function(){${showFallbackFn}};this.src='${ddg}';`
+            : showFallbackFn;
+
+        const src = logo || (domain ? `https://logo.clearbit.com/${domain}` : null);
+        if (src) {
+            return `<img src="${src}" id="${id}" style="width:${sz};height:${sz};border-radius:${r};object-fit:contain;background:#fff;border:1px solid #e2e8f0;padding:4px;display:block;" onerror="${onerrorAttr}">
+                <div id="${fb}" class="pt-logo-fb" style="width:${sz};height:${sz};border-radius:${r};display:none;">${init}</div>`;
+        }
         return `<div class="pt-logo-fb" style="width:${sz};height:${sz};border-radius:${r};">${init}</div>`;
     }
 
@@ -354,7 +365,7 @@ const FinTracker = (() => {
             }
             return `<tr class="pt-tr" onclick="showStockFromPortfolio('${h.symbol}')" style="cursor:pointer;" title="View ${display(h.symbol)}">
                 <td><div class="pt-stock-cell">
-                    <div class="pt-logo-wrap">${mkLogo(name,p?.logo,'34px','9px')}</div>
+                    <div class="pt-logo-wrap">${mkLogo(name, p?.logo, p?.logo_domain, '34px', '9px')}</div>
                     <div><div class="pt-sym">${display(h.symbol)}</div><div class="pt-cname">${name.length>18?name.slice(0,18)+'…':name}</div></div>
                 </div></td>
                 <td class="pt-mono">${fmtN(h.qty,h.qty%1===0?0:2)}</td>
@@ -412,7 +423,7 @@ const FinTracker = (() => {
         _pt = setInterval(async () => {
             if (_username) await serverLoad();
             renderPortfolio();
-        }, 30000);
+        }, 120000); // 2 min — matches backend cache TTL, avoids hammering yfinance
     }
     function stopPortfolioRefresh(){if(_pt){clearInterval(_pt);_pt=null;}}
 
