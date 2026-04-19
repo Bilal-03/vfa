@@ -58,6 +58,21 @@ const StockDashboard = (() => {
         </div>`;
     }
 
+    // ── Market hours helper (IST 9:15 – 15:30, Mon–Fri) ─────────────────────
+    function isMarketOpen() {
+        try {
+            const now = new Date();
+            // Convert to IST (UTC+5:30)
+            const ist = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+            const day = ist.getDay(); // 0=Sun, 6=Sat
+            if (day === 0 || day === 6) return false;
+            const mins = ist.getHours() * 60 + ist.getMinutes();
+            return mins >= 555 && mins <= 930; // 9:15 = 555, 15:30 = 930
+        } catch (e) {
+            return true; // fallback: assume open
+        }
+    }
+
     // ── Load ─────────────────────────────────────────────────────────────────
     // ── Symbol resolver ───────────────────────────────────────────────────────
     // Known US tickers that should NOT get .NS appended
@@ -76,11 +91,8 @@ const StockDashboard = (() => {
 
     function resolveSymbol(raw) {
         let s = raw.toUpperCase().trim();
-        // Already has an exchange suffix — use as-is
         if (s.includes('.')) return s;
-        // Known US ticker — use as-is
         if (_US_TICKERS.has(s)) return s;
-        // Everything else is treated as NSE India — append .NS
         return s + '.NS';
     }
 
@@ -100,7 +112,10 @@ const StockDashboard = (() => {
                 renderDashboard(data);
                 loadChart(_symbol, _currentTF);
                 loadNews(_symbol);
-                _refreshTimer = setInterval(refreshQuote, 30000);
+                // Only auto-refresh during market hours — saves Yahoo API calls
+                if (isMarketOpen()) {
+                    _refreshTimer = setInterval(refreshQuote, 120000); // 2 min (was 30 s)
+                }
             })
             .catch(e => showError('Network error: ' + e.message));
     }
@@ -152,7 +167,12 @@ const StockDashboard = (() => {
                 <div class="si-price-change ${up?'si-up':'si-down'}" id="si-change">
                     ${up?'▲':'▼'} ${Math.abs(quote.change||0).toFixed(2)} (${fmtPct(quote.change_pct)})
                 </div>
-                <div class="si-live-dot"><span class="si-dot"></span> LIVE · auto-refresh 30s</div>
+                <div class="si-live-dot">
+                    ${isMarketOpen()
+                        ? `<span class="si-dot"></span> LIVE · auto-refresh 2 min`
+                        : `<span style="color:#94a3b8;font-size:10px;">⏸ Market closed · data as of last session</span>`
+                    }
+                </div>
                 <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
                     <button class="si-portfolio-btn"
                         onclick="if(typeof FinTracker !== 'undefined') FinTracker.openAddHolding('${_symbol.replace('.NS','').replace('.BO','')}')">

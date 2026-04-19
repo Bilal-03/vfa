@@ -7,3 +7,13 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
+      # NSE India API is geo-blocked on Render's US servers.
+      # Setting SKIP_NSE=true bypasses NSE calls and uses Twelve Data + yfinance directly.
+      # This eliminates wasted HTTP timeouts and prevents fallback to 50-symbol Yahoo loops.
+      - key: SKIP_NSE
+        value: "true"
+      # Twelve Data free API (800 req/day). Used as primary quote source to reduce
+      # yfinance/Yahoo Finance load (which throttles by IP on shared Render servers).
+      # Set this in Render dashboard → Environment → TWELVE_DATA_KEY
+      # - key: TWELVE_DATA_KEY
+      #   value: "your_key_here"

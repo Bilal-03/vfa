@@ -10,6 +10,11 @@ import traceback
 import os
 from market_data import get_market_indices, get_nifty_gainers, get_nifty_losers, get_nifty_volume, get_nifty_turnover
 
+# When deployed to Render (US server), NSE API is geo-blocked — set SKIP_NSE=true
+# in Render env vars to bypass it and go directly to yfinance.
+_SKIP_NSE = os.environ.get("SKIP_NSE", "false").lower() in ("1", "true", "yes")
+_TWELVE_DATA_KEY = os.environ.get("TWELVE_DATA_KEY", "")
+
 import json
 import hashlib
 import time as _time
@@ -365,7 +370,7 @@ def get_stock_full(symbol_or_query):
         try:
             test = yf.Ticker(raw).history(period='2d')
             if not test.empty and len(test) > 0 and float(test['Close'].iloc[-1]) > 0:
-                ticker_symbol = raw  # Valid US or global stock
+                ticker_symbol = raw
             else:
                 ticker_symbol = raw + '.NS'
         except Exception:
@@ -374,27 +379,57 @@ def get_stock_full(symbol_or_query):
     ticker_symbol = _clean_ticker(ticker_symbol)
     symbol = ticker_symbol.replace('.NS', '').replace('.BO', '')
     result = {"symbol": symbol, "ticker": ticker_symbol}
-    try:
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Accept': 'application/json',
-            'Referer': 'https://www.nseindia.com/'
-        }
-        session = requests.Session()
-        session.get('https://www.nseindia.com', headers=headers, timeout=5)
-        r = session.get(f"https://www.nseindia.com/api/quote-equity?symbol={symbol}", headers=headers, timeout=10)
-        if r.status_code == 200 and 'priceInfo' in r.json():
-            pi = r.json()['priceInfo']
-            result['current']    = pi.get('lastPrice', 0)
-            result['open']       = pi.get('open', 0)
-            result['prev_close'] = pi.get('previousClose', 0)
-            result['day_high']   = pi.get('intraDayHighLow', {}).get('max', 0)
-            result['day_low']    = pi.get('intraDayHighLow', {}).get('min', 0)
-            result['change']     = result['current'] - result['prev_close']
-            result['change_pct'] = (result['change'] / result['prev_close'] * 100) if result['prev_close'] else 0
-        else:
-            raise Exception("NSE non-200")
-    except Exception:
+
+    # ── Step 1: Get today's quote ─────────────────────────────────────────────
+    # Primary: Twelve Data API (no IP-based throttling)
+    _got_quote = False
+    if _TWELVE_DATA_KEY:
+        try:
+            url = (f"https://api.twelvedata.com/quote"
+                   f"?symbol={ticker_symbol}&apikey={_TWELVE_DATA_KEY}")
+            r = requests.get(url, timeout=8)
+            d = r.json()
+            if "code" not in d and d.get("status") != "error" and d.get("close"):
+                result['current']    = float(d.get('close', 0))
+                result['open']       = float(d.get('open', 0))
+                result['day_high']   = float(d.get('high', 0))
+                result['day_low']    = float(d.get('low', 0))
+                result['prev_close'] = float(d.get('previous_close', 0))
+                result['change']     = result['current'] - result['prev_close']
+                result['change_pct'] = (result['change'] / result['prev_close'] * 100) if result['prev_close'] else 0
+                _got_quote = True
+        except Exception:
+            pass
+
+    # Secondary: NSE direct API (only if not on Render / SKIP_NSE not set)
+    if not _got_quote and not _SKIP_NSE:
+        try:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept': 'application/json',
+                'Referer': 'https://www.nseindia.com/'
+            }
+            session = requests.Session()
+            session.get('https://www.nseindia.com', headers=headers, timeout=5)
+            r = session.get(
+                f"https://www.nseindia.com/api/quote-equity?symbol={symbol}",
+                headers=headers, timeout=10
+            )
+            if r.status_code == 200 and 'priceInfo' in r.json():
+                pi = r.json()['priceInfo']
+                result['current']    = pi.get('lastPrice', 0)
+                result['open']       = pi.get('open', 0)
+                result['prev_close'] = pi.get('previousClose', 0)
+                result['day_high']   = pi.get('intraDayHighLow', {}).get('max', 0)
+                result['day_low']    = pi.get('intraDayHighLow', {}).get('min', 0)
+                result['change']     = result['current'] - result['prev_close']
+                result['change_pct'] = (result['change'] / result['prev_close'] * 100) if result['prev_close'] else 0
+                _got_quote = True
+        except Exception:
+            pass
+
+    # Fallback: yfinance history (only if both above failed)
+    if not _got_quote:
         try:
             clean_ticker = _clean_ticker(ticker_symbol)
             yf_data = yf.Ticker(clean_ticker).history(period='2d')
@@ -403,11 +438,13 @@ def get_stock_full(symbol_or_query):
                 result['open']       = float(yf_data['Open'].iloc[-1])
                 result['day_high']   = float(yf_data['High'].iloc[-1])
                 result['day_low']    = float(yf_data['Low'].iloc[-1])
-                result['prev_close'] = float(yf_data['Close'].iloc[-2]) if len(yf_data) > 1 else result['open']
+                result['prev_close'] = float(yf_data['Close'].iloc[-2]) if len(yf_data) > 1 else result.get('open', 0)
                 result['change']     = result['current'] - result['prev_close']
                 result['change_pct'] = (result['change'] / result['prev_close'] * 100) if result['prev_close'] else 0
         except Exception as e2:
             result['error_today'] = str(e2)
+
+    # ── Step 2: Weekly range (shared history call) ────────────────────────────
     try:
         clean_ticker = _clean_ticker(ticker_symbol)
         w = yf.Ticker(clean_ticker).history(period='5d')
@@ -516,15 +553,15 @@ def get_response():
 def market():
     import time as _t
     cache = getattr(market, '_cache', None)
-    # Use cache if fresh (60s) AND it has more than 2 indices (i.e. NSE returned full data)
-    if cache and (_t.time() - cache['ts']) < 60 and len(cache['data'].get('indices', [])) > 2:
+    # Cache TTL: 300 s (5 min) — was 60 s. Market indices don't update per-second.
+    # Also accept cache with ≥2 indices (Yahoo-only) when NSE is geo-blocked.
+    if cache and (_t.time() - cache['ts']) < 300 and len(cache['data'].get('indices', [])) >= 1:
         return jsonify(cache['data'])
     data = get_market_indices()
-    # Only cache if we got a good full result (more than 2 indices = NSE worked)
-    if len(data.get('indices', [])) > 2:
+    if len(data.get('indices', [])) >= 1:
         market._cache = {'ts': _t.time(), 'data': data}
     elif cache:
-        # NSE failed this time — return the last good cache even if stale
+        # Fetch failed entirely — return last good cache even if stale
         return jsonify(cache['data'])
     return jsonify(data)
 

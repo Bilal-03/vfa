@@ -1,8 +1,14 @@
 import requests
 import traceback
 import yfinance as yf
+import os
+import time as _time
 from datetime import datetime, time as dt_time
 import pytz
+
+# Set SKIP_NSE=true in Render env vars — NSE API is geo-blocked outside India.
+# When true, all NSE calls are skipped and Yahoo Finance is used directly.
+_SKIP_NSE = os.environ.get("SKIP_NSE", "false").lower() in ("1", "true", "yes")
 
 # ─── NSE Session helper ───────────────────────────────────────────────────────
 def _nse_session():
@@ -29,8 +35,11 @@ def _fetch_nse_all_indices(session=None):
     """
     Fetch https://www.nseindia.com/api/allIndices
     Returns list of index dicts as returned by NSE, or [] on failure.
-    Each dict has keys: indexSymbol, last, variation, percentChange, ...
+    Skipped when SKIP_NSE=true (e.g. Render deployment outside India).
     """
+    if _SKIP_NSE:
+        print("  ↩ SKIP_NSE=true — skipping NSE allIndices (geo-blocked on this server)")
+        return []
     if session is None:
         session = _nse_session()
     try:
@@ -206,64 +215,120 @@ def get_nifty_turnover():
 
 
 # ─── Internal helpers ─────────────────────────────────────────────────────────
+
+# Cache for nifty50 data — 5 min TTL prevents 50-symbol Yahoo loop on every request
+_nifty50_cache = {'ts': 0, 'data': []}
+_NIFTY50_TTL = 300  # 5 minutes
+
+
 def _get_all_nifty50_data():
     """
     Fetch per-stock data for NIFTY 50 constituents.
-    Tries NSE equity-stockIndices API first, falls back to Yahoo.
+    Cached for 5 minutes to prevent 50+ individual yfinance calls per request.
+    Tries NSE equity-stockIndices API first (skipped when SKIP_NSE=true),
+    falls back to Yahoo Finance batch via yf.download().
     Returns list of dicts: {symbol, price, change, pChange, volume}
     """
+    # Return cached data if fresh
+    if _time.time() - _nifty50_cache['ts'] < _NIFTY50_TTL and _nifty50_cache['data']:
+        print(f"  ✓ NIFTY 50 data from cache ({len(_nifty50_cache['data'])} stocks)")
+        return _nifty50_cache['data']
+
     result = []
 
-    # Try NSE equity-stockIndices endpoint
+    # Try NSE equity-stockIndices endpoint (skipped on Render)
+    if not _SKIP_NSE:
+        try:
+            session = _nse_session()
+            url = 'https://www.nseindia.com/api/equity-stockIndices?index=NIFTY%2050'
+            r = session.get(url, timeout=15)
+            r.raise_for_status()
+            data = r.json().get('data', [])
+            # data[0] is the index summary row; skip it
+            for row in data[1:]:
+                sym = row.get('symbol', '')
+                if not sym:
+                    continue
+                try:
+                    result.append({
+                        'symbol':  sym,
+                        'price':   round(float(row.get('lastPrice', 0)), 2),
+                        'change':  round(float(row.get('change', 0)), 2),
+                        'pChange': round(float(row.get('pChange', 0)), 2),
+                        'volume':  int(float(row.get('totalTradedVolume', 0))),
+                    })
+                except Exception:
+                    continue
+            if result:
+                print(f"  ✓ NSE API returned {len(result)} stocks")
+                _nifty50_cache['ts']   = _time.time()
+                _nifty50_cache['data'] = result
+                return result
+        except Exception as e:
+            print(f"  ⚠ NSE equity-stockIndices failed: {e}")
+    else:
+        print("  ↩ SKIP_NSE=true — skipping NSE equity endpoint")
+
+    # Yahoo fallback — use yf.download() for batch fetch (1 call instead of 50)
+    print("  ↩ Falling back to Yahoo Finance (batch download) for NIFTY 50 data …")
     try:
-        session = _nse_session()
-        url = 'https://www.nseindia.com/api/equity-stockIndices?index=NIFTY%2050'
-        r = session.get(url, timeout=15)
-        r.raise_for_status()
-        data = r.json().get('data', [])
-        # data[0] is the index summary row; skip it
-        for row in data[1:]:
-            sym = row.get('symbol', '')
-            if not sym:
-                continue
+        symbols_ns = [f"{s}.NS" for s in _get_nifty50_symbols()]
+        import pandas as _pd
+        data = yf.download(
+            symbols_ns,
+            period='5d',
+            progress=False,
+            group_by='ticker',
+            threads=True,
+            auto_adjust=True,
+        )
+        for sym_ns in symbols_ns:
+            sym = sym_ns.replace('.NS', '')
             try:
+                closes = data[sym_ns]['Close'].dropna() if sym_ns in data.columns.get_level_values(0) else _pd.Series([])
+                if len(closes) < 2:
+                    continue
+                current    = float(closes.iloc[-1])
+                prev_close = float(closes.iloc[-2])
+                change     = current - prev_close
+                pct        = (change / prev_close * 100) if prev_close else 0
+                volume     = int(data[sym_ns]['Volume'].dropna().iloc[-1]) if 'Volume' in data[sym_ns] else 0
                 result.append({
                     'symbol':  sym,
-                    'price':   round(float(row.get('lastPrice', 0)), 2),
-                    'change':  round(float(row.get('change', 0)), 2),
-                    'pChange': round(float(row.get('pChange', 0)), 2),
-                    'volume':  int(float(row.get('totalTradedVolume', 0))),
+                    'price':   round(current, 2),
+                    'change':  round(change, 2),
+                    'pChange': round(pct, 2),
+                    'volume':  volume,
                 })
             except Exception:
                 continue
-        if result:
-            print(f"  ✓ NSE API returned {len(result)} stocks")
-            return result
+        print(f"  ✓ Yahoo batch returned {len(result)} stocks")
     except Exception as e:
-        print(f"  ⚠ NSE equity-stockIndices failed: {e}")
-
-    # Yahoo fallback
-    print("  ↩ Falling back to Yahoo Finance for stock data …")
-    for symbol in _get_nifty50_symbols():
-        try:
-            hist = yf.Ticker(f"{symbol}.NS").history(period='5d')
-            if hist.empty or len(hist) < 2:
+        print(f"  ⚠ Yahoo batch download failed: {e} — trying individual fallback")
+        # Last resort: individual fetches (slow, use sparingly)
+        for symbol in _get_nifty50_symbols():
+            try:
+                hist = yf.Ticker(f"{symbol}.NS").history(period='5d')
+                if hist.empty or len(hist) < 2:
+                    continue
+                current    = float(hist['Close'].iloc[-1])
+                prev_close = float(hist['Close'].iloc[-2])
+                change     = current - prev_close
+                pct        = (change / prev_close * 100) if prev_close else 0
+                volume     = int(hist['Volume'].iloc[-1])
+                result.append({
+                    'symbol':  symbol,
+                    'price':   round(current, 2),
+                    'change':  round(change, 2),
+                    'pChange': round(pct, 2),
+                    'volume':  volume,
+                })
+            except Exception:
                 continue
-            current    = float(hist['Close'].iloc[-1])
-            prev_close = float(hist['Close'].iloc[-2])
-            change     = current - prev_close
-            pct        = (change / prev_close * 100) if prev_close else 0
-            volume     = int(hist['Volume'].iloc[-1])
-            result.append({
-                'symbol':  symbol,
-                'price':   round(current, 2),
-                'change':  round(change, 2),
-                'pChange': round(pct, 2),
-                'volume':  volume,
-            })
-        except Exception:
-            continue
-    print(f"  ✓ Yahoo returned {len(result)} stocks")
+        print(f"  ✓ Yahoo individual returned {len(result)} stocks")
+
+    _nifty50_cache['ts']   = _time.time()
+    _nifty50_cache['data'] = result
     return result
 
 
