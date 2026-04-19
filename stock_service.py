@@ -1,13 +1,14 @@
 """
-stock_service.py — yfinance backend, no API key required (yfinance as fallback).
-Twelve Data API used as primary quote source to reduce yfinance IP-rate-limiting.
+stock_service.py — yfinance backend with Twelve Data as primary quote source.
 
 Key fixes (2026-04):
-  - ALL yf.Ticker().info calls consolidated into ONE fetch per symbol via _get_ticker_data()
-  - Threading locks prevent duplicate concurrent fetches for the same symbol
-  - Twelve Data API (free key, 800 req/day) used first for quotes — no IP blocking
-  - Increased cache TTLs: quote 30s→120s, candles 60s→600s, news 300s→900s
-  - get_full_dashboard() now triggers ~1 Yahoo call instead of 4+
+  - Twelve Data symbol format fixed: HDFCBANK.NS → HDFCBANK:NSE (Indian stocks)
+  - _symbol_currency() infers USD/INR from symbol suffix — fixes US stocks showing ₹
+  - get_quote() has 3-tier fallback: Twelve Data → yfinance .info → yfinance .history()
+  - yfinance .history() is the most reliable tier — always works even when market is closed
+  - ALL yf.Ticker().info calls consolidated via _get_ticker_data() (1 call, not 4)
+  - Threading Event locks prevent duplicate concurrent fetches for the same symbol
+  - Increased cache TTLs: quote 30s→120s, candles 60s→900s, news 300s→900s
 """
 
 import time
@@ -38,33 +39,67 @@ def _safe(v, d=2):
         return None
 
 
-# ── Twelve Data API (primary quote source — no IP-based throttling) ───────────
+# ── Symbol helpers ─────────────────────────────────────────────────────────────
+
+def _td_symbol(yf_symbol):
+    """
+    Convert yfinance symbol format to Twelve Data API format.
+    HDFCBANK.NS  →  HDFCBANK:NSE   (Indian NSE stocks)
+    TATASTEEL.BO →  TATASTEEL:BSE  (Indian BSE stocks)
+    AAPL, MSFT   →  unchanged      (US stocks work as-is)
+    """
+    if yf_symbol.endswith('.NS'):
+        return yf_symbol[:-3] + ':NSE'
+    if yf_symbol.endswith('.BO'):
+        return yf_symbol[:-3] + ':BSE'
+    return yf_symbol
+
+
+def _symbol_currency(symbol):
+    """
+    Infer currency from symbol suffix.
+    Reliable fallback when yfinance .info doesn't return a currency field —
+    which happens when the market is closed or the info dict is sparse.
+    Fixes: US stocks (AAPL, MSFT) were showing ₹ instead of $.
+    """
+    if symbol.endswith('.NS') or symbol.endswith('.BO'):
+        return 'INR'
+    return 'USD'   # US, global stocks
+
+
+# ── Twelve Data API ────────────────────────────────────────────────────────────
 _TWELVE_DATA_KEY = os.environ.get("TWELVE_DATA_KEY", "")
+
 
 def _twelve_data_quote(symbol):
     """
-    Fetch real-time quote from Twelve Data API.
-    Free tier: 800 requests/day, no IP blocking.
-    Returns a dict compatible with get_quote(), or None on failure.
+    Fetch quote from Twelve Data API (free tier: 800 req/day, no IP blocking).
+    Converts yfinance symbol to Twelve Data format via _td_symbol() first.
+    Returns dict compatible with get_quote(), or None on any failure.
     """
     if not _TWELVE_DATA_KEY:
         return None
     try:
+        td_sym = _td_symbol(symbol)   # e.g. HDFCBANK.NS → HDFCBANK:NSE
         url = (
             f"https://api.twelvedata.com/quote"
-            f"?symbol={symbol}&apikey={_TWELVE_DATA_KEY}"
+            f"?symbol={td_sym}&apikey={_TWELVE_DATA_KEY}"
         )
         r = requests.get(url, timeout=8)
         if r.status_code != 200:
             return None
         d = r.json()
-        # Twelve Data error responses contain a "code" field
-        if "code" in d or "status" in d and d.get("status") == "error":
+        # Error responses from Twelve Data have a "code" or "status":"error" field
+        if "code" in d or ("status" in d and d.get("status") == "error"):
             return None
         cur  = _safe(d.get("close"))
         prev = _safe(d.get("previous_close"))
+        if not cur or cur == 0:
+            return None   # Empty/zero response — fall through to yfinance
         chg  = _safe((cur or 0) - (prev or 0))
         chgp = _safe(((chg / prev) * 100) if prev else 0)
+        # currency from response; fall back to symbol-suffix inference
+        currency = d.get("currency") or _symbol_currency(symbol)
         return {
             "symbol":      symbol,
             "current":     cur,
@@ -76,7 +111,7 @@ def _twelve_data_quote(symbol):
             "prev_close":  prev,
             "volume":      int(d.get("volume", 0) or 0),
             "avg_volume":  None,
-            "currency":    d.get("currency", "INR"),
+            "currency":    currency,
             "_source":     "twelvedata",
         }
     except Exception as e:
@@ -84,25 +119,23 @@ def _twelve_data_quote(symbol):
         return None
 
 
-# ── Deduplicating ticker-info fetch ───────────────────────────────────────────
-# Tracks in-flight fetches so concurrent requests for the same symbol
-# wait for the first fetch instead of all hammering Yahoo Finance.
-_inflight: dict = {}          # symbol → threading.Event
+# ── Deduplicating yf.Ticker().info fetch ──────────────────────────────────────
+# Concurrent requests for the same symbol wait for the first fetch instead of
+# all hitting Yahoo Finance simultaneously.
+_inflight: dict = {}
 _inflight_lock = threading.Lock()
+
 
 def _get_ticker_data(symbol):
     """
     Fetch yf.Ticker info ONCE and cache for 120 s.
-    Concurrent requests for the same symbol wait for the first fetch to complete.
-    This replaces 4 separate yf.Ticker(symbol).info calls with a single one.
-    TTL 120 s: quotes change meaningfully only every 2+ minutes.
+    Used by get_profile(), get_metrics(), get_analyst() so they all share 1 HTTP call.
     """
     cache_key = f"ticker_data:{symbol}"
     cached = _get(cache_key)
     if cached:
         return cached
 
-    # Check if another thread is already fetching this symbol
     with _inflight_lock:
         if symbol in _inflight:
             event = _inflight[symbol]
@@ -113,12 +146,10 @@ def _get_ticker_data(symbol):
             is_leader = True
 
     if not is_leader:
-        # Wait for the leader thread (max 20 s), then return whatever got cached
         event.wait(timeout=20)
         result = _get(cache_key)
         return result if result else {"info": {}, "error": "timeout waiting for fetch"}
 
-    # This thread is the leader — do the actual fetch
     try:
         t = yf.Ticker(symbol)
         info = t.info or {}
@@ -126,61 +157,60 @@ def _get_ticker_data(symbol):
         _set(cache_key, data, 120)
         return data
     except Exception as e:
-        err = {"info": {}, "error": str(e)}
-        return err
+        return {"info": {}, "error": str(e)}
     finally:
         event.set()
         with _inflight_lock:
             _inflight.pop(symbol, None)
 
 
-# ── Logo helper ───────────────────────────────────────────────────────────────
+# ── Logo helper ────────────────────────────────────────────────────────────────
 def _get_logo(symbol, website=None):
     from urllib.parse import urlparse
 
     KNOWN_DOMAINS = {
-        "RELIANCE": "ril.com",       "RELIANCE.NS": "ril.com",
-        "TCS":      "tcs.com",       "TCS.NS":      "tcs.com",
-        "HDFCBANK": "hdfcbank.com",  "HDFCBANK.NS": "hdfcbank.com",
-        "INFY":     "infosys.com",   "INFY.NS":     "infosys.com",
-        "ICICIBANK":"icicibank.com", "ICICIBANK.NS":"icicibank.com",
-        "HINDUNILVR":"hul.co.in",    "SBIN":        "sbi.co.in",
-        "BHARTIARTL":"airtel.com",   "BHARTIARTL.NS":"airtel.com",
+        "RELIANCE": "ril.com",        "RELIANCE.NS": "ril.com",
+        "TCS":      "tcs.com",        "TCS.NS":      "tcs.com",
+        "HDFCBANK": "hdfcbank.com",   "HDFCBANK.NS": "hdfcbank.com",
+        "INFY":     "infosys.com",    "INFY.NS":     "infosys.com",
+        "ICICIBANK":"icicibank.com",  "ICICIBANK.NS":"icicibank.com",
+        "HINDUNILVR":"hul.co.in",     "SBIN":        "sbi.co.in",
+        "BHARTIARTL":"airtel.com",    "BHARTIARTL.NS":"airtel.com",
         "BAJFINANCE":"bajajfinserv.in",
         "ASIANPAINT":"asianpaints.com",
         "MARUTI":   "marutisuzuki.com","MARUTI.NS":  "marutisuzuki.com",
-        "KOTAKBANK":"kotak.com",     "LT":          "larsentoubro.com",
-        "AXISBANK": "axisbank.com",  "TITAN":       "titancompany.in",
-        "SUNPHARMA":"sunpharma.com", "WIPRO":       "wipro.com",
-        "HCLTECH":  "hcltech.com",   "TATAMOTORS":  "tatamotors.com",
-        "ONGC":     "ongcindia.com", "NTPC":        "ntpc.co.in",
+        "KOTAKBANK":"kotak.com",      "LT":          "larsentoubro.com",
+        "AXISBANK": "axisbank.com",   "TITAN":       "titancompany.in",
+        "SUNPHARMA":"sunpharma.com",  "WIPRO":       "wipro.com",
+        "HCLTECH":  "hcltech.com",    "TATAMOTORS":  "tatamotors.com",
+        "ONGC":     "ongcindia.com",  "NTPC":        "ntpc.co.in",
         "POWERGRID":"powergridindia.com",
-        "JSWSTEEL": "jsw.in",        "ADANIENT":    "adani.com",
+        "JSWSTEEL": "jsw.in",         "ADANIENT":    "adani.com",
         "ADANIPORTS":"adaniports.com",
-        "COALINDIA":"coalindia.in",  "TECHM":       "techmahindra.com",
-        "TATASTEEL":"tatasteel.com", "HINDALCO":    "hindalco.com",
-        "CIPLA":    "cipla.com",     "DRREDDY":     "drreddys.com",
+        "COALINDIA":"coalindia.in",   "TECHM":       "techmahindra.com",
+        "TATASTEEL":"tatasteel.com",  "HINDALCO":    "hindalco.com",
+        "CIPLA":    "cipla.com",      "DRREDDY":     "drreddys.com",
         "BRITANNIA":"britannia.co.in",
         "APOLLOHOSP":"apollohospitals.com",
-        "SBILIFE":  "sbilife.co.in", "HEROMOTOCO":  "heromotocorp.com",
+        "SBILIFE":  "sbilife.co.in",  "HEROMOTOCO":  "heromotocorp.com",
         "BPCL":     "bharatpetroleum.com",
-        "SUZLON":   "suzlon.com",    "SUZLON.NS":   "suzlon.com",
-        "ZOMATO":   "zomato.com",    "PAYTM":       "paytm.com",
-        "NYKAA":    "nykaa.com",     "DLF":         "dlf.in",
-        "DMART":    "dmartindia.com","IRCTC":       "irctc.co.in",
-        "HAL":      "hal-india.co.in","IRFC":       "irfc.nic.in",
-        "LUPIN":    "lupin.com",     "AUROPHARMA":  "aurobindo.com",
-        "HAVELLS":  "havells.com",   "VOLTAS":      "voltas.com",
+        "SUZLON":   "suzlon.com",     "SUZLON.NS":   "suzlon.com",
+        "ZOMATO":   "zomato.com",     "PAYTM":       "paytm.com",
+        "NYKAA":    "nykaa.com",      "DLF":         "dlf.in",
+        "DMART":    "dmartindia.com", "IRCTC":       "irctc.co.in",
+        "HAL":      "hal-india.co.in","IRFC":        "irfc.nic.in",
+        "LUPIN":    "lupin.com",      "AUROPHARMA":  "aurobindo.com",
+        "HAVELLS":  "havells.com",    "VOLTAS":      "voltas.com",
         "JUBLFOOD":  "jubilantfoodworks.com",
-        "ITC":      "itcportal.com", "NTPC.NS":     "ntpc.co.in",
-        "AAPL":  "apple.com",   "MSFT":  "microsoft.com",
-        "GOOGL": "google.com",  "GOOG":  "google.com",
-        "AMZN":  "amazon.com",  "META":  "meta.com",
-        "TSLA":  "tesla.com",   "NVDA":  "nvidia.com",
-        "NFLX":  "netflix.com", "AMD":   "amd.com",
-        "INTC":  "intel.com",   "JPM":   "jpmorganchase.com",
-        "BAC":   "bankofamerica.com","V":  "visa.com",
-        "WMT":   "walmart.com", "DIS":   "thewaltdisneycompany.com",
+        "ITC":      "itcportal.com",  "NTPC.NS":     "ntpc.co.in",
+        "AAPL":  "apple.com",    "MSFT":  "microsoft.com",
+        "GOOGL": "google.com",   "GOOG":  "google.com",
+        "AMZN":  "amazon.com",   "META":  "meta.com",
+        "TSLA":  "tesla.com",    "NVDA":  "nvidia.com",
+        "NFLX":  "netflix.com",  "AMD":   "amd.com",
+        "INTC":  "intel.com",    "JPM":   "jpmorganchase.com",
+        "BAC":   "bankofamerica.com", "V": "visa.com",
+        "WMT":   "walmart.com",  "DIS":   "thewaltdisneycompany.com",
     }
 
     domain = None
@@ -200,26 +230,31 @@ def _get_logo(symbol, website=None):
     return ""
 
 
-# ── Public API — all use _get_ticker_data() internally ────────────────────────
+# ── Public API ─────────────────────────────────────────────────────────────────
 
 def get_profile(symbol):
     k = f"profile:{symbol}"
     c = _get(k)
     if c:
         return c
-    td = _get_ticker_data(symbol)
+    td   = _get_ticker_data(symbol)
     info = td.get("info", {})
     website = info.get("website", "")
-    logo = info.get("logo_url", "") or _get_logo(symbol, website)
+    logo    = info.get("logo_url", "") or _get_logo(symbol, website)
+    # CRITICAL: infer currency from symbol suffix when yf.info is sparse.
+    # Prevents US stocks (AAPL, MSFT) from showing ₹ instead of $.
+    currency         = info.get("currency") or _symbol_currency(symbol)
+    default_country  = "India" if currency == "INR" else "USA"
+    default_exchange = "NSE" if symbol.endswith(".NS") else ("BSE" if symbol.endswith(".BO") else "NASDAQ")
     data = {
         "symbol":      info.get("symbol", symbol),
         "name":        info.get("longName") or info.get("shortName", symbol),
         "logo":        logo,
-        "exchange":    info.get("exchange", "NSE"),
+        "exchange":    info.get("exchange", default_exchange),
         "industry":    info.get("industry", "N/A"),
         "sector":      info.get("sector", "N/A"),
-        "country":     info.get("country", "India"),
-        "currency":    info.get("currency", "INR"),
+        "country":     info.get("country", default_country),
+        "currency":    currency,
         "web_url":     website,
         "description": (info.get("longBusinessSummary") or "")[:400],
         "employees":   info.get("fullTimeEmployees"),
@@ -233,46 +268,89 @@ def get_profile(symbol):
 
 def get_quote(symbol):
     """
-    Quote with Twelve Data as primary source, yfinance as fallback.
-    TTL 120 s (was 30 s) — sufficient for display; auto-refresh handles freshness.
+    Three-tier fallback to guarantee a valid price is always returned:
+
+    Tier 1 — Twelve Data API
+      Correct symbol format (HDFCBANK:NSE, AAPL), no IP blocking, 800 req/day free.
+      Will be used for most requests after the cache warms up.
+
+    Tier 2 — yfinance .info (shared cache, no extra HTTP call)
+      Works when market is open and .info has currentPrice/regularMarketPrice.
+      May return 0 on Indian stocks when market is closed — detected and skipped.
+
+    Tier 3 — yfinance .history(period='5d')
+      ALWAYS reliable. Returns OHLCV even on weekends, holidays, after market close.
+      This is what was used before and we keep it as the guaranteed fallback.
     """
     k = f"quote:{symbol}"
     c = _get(k)
     if c:
         return c
 
-    # ── Primary: Twelve Data (no IP-based rate limiting) ──────────────────────
+    # ── Tier 1: Twelve Data ────────────────────────────────────────────────────
     td_quote = _twelve_data_quote(symbol)
-    if td_quote:
+    if td_quote and (td_quote.get("current") or 0) > 0:
         _set(k, td_quote, 120)
         return td_quote
 
-    # ── Fallback: yfinance (shared ticker data — no extra HTTP call) ──────────
+    # ── Tier 2: yfinance .info (from shared cache — no extra HTTP call) ───────
     try:
-        td = _get_ticker_data(symbol)
+        td   = _get_ticker_data(symbol)
         info = td.get("info", {})
-        cur  = _safe(info.get("currentPrice") or info.get("regularMarketPrice") or info.get("previousClose", 0))
-        prev = _safe(info.get("previousClose") or info.get("regularMarketPreviousClose", 0))
-        chg  = _safe((cur or 0) - (prev or 0))
-        chgp = _safe(((chg / prev) * 100) if prev else 0)
-        data = {
-            "symbol":     symbol,
-            "current":    cur,
-            "change":     chg,
-            "change_pct": chgp,
-            "high":       _safe(info.get("dayHigh") or info.get("regularMarketDayHigh")),
-            "low":        _safe(info.get("dayLow")  or info.get("regularMarketDayLow")),
-            "open":       _safe(info.get("open")    or info.get("regularMarketOpen")),
-            "prev_close": prev,
-            "volume":     info.get("volume", 0),
-            "avg_volume": info.get("averageVolume"),
-            "currency":   info.get("currency", "INR"),
-            "_source":    "yfinance",
-        }
-        _set(k, data, 120)
-        return data
+        cur  = _safe(info.get("currentPrice") or info.get("regularMarketPrice"))
+        prev = _safe(info.get("previousClose") or info.get("regularMarketPreviousClose"))
+        if cur and cur > 0:
+            chg  = _safe((cur or 0) - (prev or 0))
+            chgp = _safe(((chg / prev) * 100) if prev else 0)
+            data = {
+                "symbol":     symbol,
+                "current":    cur,
+                "change":     chg,
+                "change_pct": chgp,
+                "high":       _safe(info.get("dayHigh") or info.get("regularMarketDayHigh")),
+                "low":        _safe(info.get("dayLow")  or info.get("regularMarketDayLow")),
+                "open":       _safe(info.get("open")    or info.get("regularMarketOpen")),
+                "prev_close": prev,
+                "volume":     info.get("volume", 0),
+                "avg_volume": info.get("averageVolume"),
+                "currency":   info.get("currency") or _symbol_currency(symbol),
+                "_source":    "yfinance_info",
+            }
+            _set(k, data, 120)
+            return data
+    except Exception:
+        pass
+
+    # ── Tier 3: yfinance .history() — guaranteed fallback ─────────────────────
+    # Works market open OR closed, weekends, holidays. Always returns OHLCV.
+    try:
+        hist = yf.Ticker(symbol).history(period='5d')
+        if not hist.empty and len(hist) >= 1:
+            cur  = round(float(hist['Close'].iloc[-1]), 2)
+            prev = round(float(hist['Close'].iloc[-2]), 2) if len(hist) >= 2 else cur
+            chg  = round(cur - prev, 2)
+            chgp = round((chg / prev * 100) if prev else 0, 2)
+            vol  = hist['Volume'].iloc[-1]
+            data = {
+                "symbol":     symbol,
+                "current":    cur,
+                "change":     chg,
+                "change_pct": chgp,
+                "high":       round(float(hist['High'].iloc[-1]), 2),
+                "low":        round(float(hist['Low'].iloc[-1]),  2),
+                "open":       round(float(hist['Open'].iloc[-1]), 2),
+                "prev_close": prev,
+                "volume":     int(vol) if vol == vol else 0,  # NaN guard
+                "avg_volume": None,
+                "currency":   _symbol_currency(symbol),
+                "_source":    "yfinance_history",
+            }
+            _set(k, data, 120)
+            return data
     except Exception as e:
         return {"error": str(e)}
+
+    return {"error": f"No price data available for {symbol}"}
 
 
 def get_metrics(symbol):
@@ -335,7 +413,7 @@ def get_metrics(symbol):
 
 
 def get_analyst(symbol):
-    """Uses shared ticker data for info; only recommendations need a separate call (cached 1h)."""
+    """Uses shared ticker info; recommendations fetched separately (cached 1h)."""
     k = f"analyst:{symbol}"
     c = _get(k)
     if c:
@@ -351,11 +429,11 @@ def get_analyst(symbol):
             if rdf is not None and not rdf.empty:
                 for _, row in rdf.tail(10).iterrows():
                     g = str(row.get("To Grade", row.get("Action", ""))).lower()
-                    if "strong buy" in g:                                         sb   += 1
-                    elif any(x in g for x in ["buy","outperform","overweight"]):  buy  += 1
-                    elif any(x in g for x in ["hold","neutral","equal"]):         hold += 1
+                    if "strong buy" in g:                                          sb    += 1
+                    elif any(x in g for x in ["buy","outperform","overweight"]):   buy   += 1
+                    elif any(x in g for x in ["hold","neutral","equal"]):          hold  += 1
                     elif any(x in g for x in ["strong sell","underperform","underweight"]): ssell += 1
-                    elif "sell" in g:                                              sell += 1
+                    elif "sell" in g:                                              sell  += 1
         except Exception:
             pass
 
@@ -369,18 +447,18 @@ def get_analyst(symbol):
             consensus = "Strong Buy" if bull >= 0.6 else "Buy" if bull >= 0.4 else "Sell" if bear >= 0.4 else "Hold"
 
         data = {
-            "symbol":         symbol,
-            "consensus":      consensus,
-            "strong_buy":     sb,
-            "buy":            buy,
-            "hold":           hold,
-            "sell":           sell,
-            "strong_sell":    ssell,
-            "total":          total,
-            "target_mean":    _safe(info.get("targetMeanPrice")),
-            "target_high":    _safe(info.get("targetHighPrice")),
-            "target_low":     _safe(info.get("targetLowPrice")),
-            "analyst_count":  info.get("numberOfAnalystOpinions", 0),
+            "symbol":        symbol,
+            "consensus":     consensus,
+            "strong_buy":    sb,
+            "buy":           buy,
+            "hold":          hold,
+            "sell":          sell,
+            "strong_sell":   ssell,
+            "total":         total,
+            "target_mean":   _safe(info.get("targetMeanPrice")),
+            "target_high":   _safe(info.get("targetHighPrice")),
+            "target_low":    _safe(info.get("targetLowPrice")),
+            "analyst_count": info.get("numberOfAnalystOpinions", 0),
         }
         _set(k, data, 3600)
         return data
@@ -389,10 +467,7 @@ def get_analyst(symbol):
 
 
 def get_news(symbol):
-    """
-    Fetch news for a symbol. TTL raised to 900 s (15 min) — was 300 s (5 min).
-    News doesn't update that frequently; this reduces Yahoo calls 3x.
-    """
+    """Fetch news. TTL 900 s (15 min) — was 300 s (5 min). 3x fewer Yahoo calls."""
     k = f"news:{symbol}"
     c = _get(k)
     if c:
@@ -474,7 +549,7 @@ def _tf_dates(tf):
 
 def get_candles(symbol, tf="3M"):
     """
-    TTL raised: intraday (1D/1W) = 300 s, longer timeframes = 900 s.
+    TTL: intraday (1D/1W) = 300 s, longer timeframes = 900 s.
     Was 60 s for all — massive reduction in Yahoo calls.
     """
     k = f"candle:{symbol}:{tf}"
@@ -484,12 +559,9 @@ def get_candles(symbol, tf="3M"):
     try:
         interval = _TF_INTERVAL.get(tf, "1d")
         start, end = _tf_dates(tf)
-
         ticker = yf.Ticker(symbol)
-        if start is None:
-            hist = ticker.history(period="max", interval=interval)
-        else:
-            hist = ticker.history(start=start, end=end, interval=interval)
+        hist   = ticker.history(period="max", interval=interval) if start is None \
+                 else ticker.history(start=start, end=end, interval=interval)
 
         if hist.empty:
             return {"error": "No chart data"}
@@ -510,7 +582,6 @@ def get_candles(symbol, tf="3M"):
                 pass
 
         data = {"symbol": symbol, "timeframe": tf, "candles": candles, "count": len(candles)}
-        # Intraday charts need fresher data; longer timeframes are stable
         candle_ttl = 300 if tf in ("1D", "1W") else 900
         _set(k, data, candle_ttl)
         return data
@@ -521,9 +592,8 @@ def get_candles(symbol, tf="3M"):
 # ── Dashboard composite ────────────────────────────────────────────────────────
 def get_full_dashboard(symbol):
     """
-    Fetches all dashboard data.
-    After fix: triggers _get_ticker_data() ONCE → ~1 Yahoo HTTP call instead of 4+.
-    Twelve Data handles the quote; yfinance handles profile/metrics/analyst from cache.
+    After fix: _get_ticker_data() is called ONCE → ~1 Yahoo HTTP call total
+    (shared across profile, metrics, analyst). Quote uses Twelve Data first.
     """
     return {
         "symbol":     symbol,
