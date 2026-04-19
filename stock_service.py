@@ -352,19 +352,132 @@ def get_quote(symbol):
 
     return {"error": f"No price data available for {symbol}"}
 
+def _twelve_data_statistics(symbol):
+    """
+    Fetch comprehensive fundamental statistics from Twelve Data API.
+    Covers: PE, P/B, EV/EBITDA, beta, 52W high/low, margins, ROE, ROA,
+    debt/equity, current ratio, dividend yield, market cap, cash flow.
+
+    Twelve Data returns ratio/margin fields as DECIMALS matching yfinance format:
+      profit_margin = 0.2430 (24.30%), ROE = 1.4593 (145.93%)
+    so they slot directly into the existing display logic.
+
+    Cached for 1 hour (same as get_metrics TTL) — no extra calls on re-render.
+    """
+    if not _TWELVE_DATA_KEY:
+        return {}
+    cache_key = f"td_stats:{symbol}"
+    cached = _get(cache_key)
+    if cached:
+        return cached
+    try:
+        td_sym = _td_symbol(symbol)   # HDFCBANK.NS → HDFCBANK:NSE
+        url = (
+            f"https://api.twelvedata.com/statistics"
+            f"?symbol={td_sym}&apikey={_TWELVE_DATA_KEY}"
+        )
+        r = requests.get(url, timeout=12)
+        if r.status_code != 200:
+            return {}
+        d = r.json()
+        if "code" in d or ("status" in d and d.get("status") == "error"):
+            return {}
+
+        stats = d.get("statistics", {})
+        vm    = stats.get("valuations_metrics", {})
+        ss    = stats.get("stock_statistics", {})
+        fi    = stats.get("financials", {})
+        inc   = fi.get("income_statement", {})
+        bal   = fi.get("balance_sheet", {})
+        cf    = fi.get("cash_flow", {})
+
+        def sf(v):
+            try:
+                f = float(v)
+                return None if (f != f) else f
+            except:
+                return None
+
+        result = {
+            # Valuation — absolute numbers, use as-is
+            "market_cap":        sf(vm.get("market_capitalization")),
+            "pe_ratio":          sf(vm.get("trailing_pe")),
+            "pe_forward":        sf(vm.get("forward_pe")),
+            "price_to_book":     sf(vm.get("price_to_book_mrq")),
+            "ev_ebitda":         sf(vm.get("enterprise_to_ebitda")),
+            # Per-share / ratio — safe to use as-is
+            "eps_ttm":           sf(inc.get("eps_diluted_ttm") or ss.get("diluted_eps_ttm")),
+            "beta":              sf(ss.get("beta")),
+            "week52_high":       sf(ss.get("52_week_high")),
+            "week52_low":        sf(ss.get("52_week_low")),
+            "current_ratio":     sf(bal.get("current_ratio_mrq") or ss.get("current_ratio_mrq")),
+            "debt_equity":       sf(bal.get("total_debt_to_equity_mrq") or ss.get("total_debt_to_equity_mrq")),
+            # Decimal ratios (TD returns same decimal format as yfinance: 0.25 = 25%)
+            "profit_margins":    sf(ss.get("profit_margin")),
+            "operating_margins": sf(ss.get("operating_margin_ttm")),
+            "roe":               sf(ss.get("return_on_equity_ttm")),
+            "roa":               sf(ss.get("return_on_assets_ttm")),
+            "dividend_yield":    sf(
+                ss.get("forward_annual_dividend_yield")
+                or ss.get("trailing_annual_dividend_yield")
+            ),
+            # Absolute cash/debt figures
+            "total_cash":        sf(bal.get("total_cash_mrq") or ss.get("total_cash_mrq")),
+            "total_debt":        sf(bal.get("total_debt_mrq") or ss.get("total_debt_mrq")),
+            "free_cashflow":     sf(
+                cf.get("levered_free_cash_flow_ttm")
+                or ss.get("levered_free_cash_flow_ttm")
+            ),
+        }
+        _set(cache_key, result, 3600)
+        return result
+    except Exception as e:
+        print(f"  ⚠ Twelve Data statistics failed for {symbol}: {e}")
+        return {}
+
 
 def get_metrics(symbol):
-    """Uses shared ticker data — no additional Yahoo request needed."""
+    """
+    Key fundamentals with three-source fallback so ANY available data is shown:
+
+      Source 1 — Twelve Data statistics (comprehensive, reliable, no IP throttle)
+        PE, P/B, beta, 52W high/low, margins, ROE/ROA, debt/equity, market cap, etc.
+
+      Source 2 — yfinance fast_info (lightweight, always available)
+        market_cap, year_high (52W high), year_low (52W low)
+
+      Source 3 — yfinance .info (from shared _get_ticker_data cache)
+        Fallback for any field not covered above.
+
+      Source 4 — Computed from balance_sheet + financials (for ROE only)
+        Most reliable for ROE — already shown to work.
+    """
     k = f"metrics:{symbol}"
     c = _get(k)
     if c:
         return c
     try:
+        # Source 1: Twelve Data statistics
+        tds  = _twelve_data_statistics(symbol)
+
+        # Source 2: yfinance fast_info (lightweight, no .info parsing needed)
+        fi_data = {}
+        try:
+            fi = yf.Ticker(symbol).fast_info
+            fi_data = {
+                "market_cap":  getattr(fi, "market_cap",  None),
+                "week52_high": getattr(fi, "year_high",   None),
+                "week52_low":  getattr(fi, "year_low",    None),
+            }
+        except Exception:
+            pass
+
+        # Source 3: yfinance .info (shared cache — no extra HTTP call)
         td   = _get_ticker_data(symbol)
         info = td.get("info", {})
 
-        # ROE: try info first, then compute from financials
-        roe = _safe(info.get("returnOnEquity"))
+        # Source 4: ROE computed from balance_sheet if not available above
+        roe = tds.get("roe") or _safe(info.get("returnOnEquity"))
         if roe is None:
             try:
                 t   = yf.Ticker(symbol)
@@ -381,35 +494,52 @@ def get_metrics(symbol):
             except Exception:
                 pass
 
+        def first(*vals):
+            """Return the first non-None, non-NaN value from multiple sources."""
+            for v in vals:
+                r = _safe(v) if not isinstance(v, (int, float)) else v
+                if r is not None:
+                    return r
+            return None
+
         data = {
             "symbol":            symbol,
-            "pe_ratio":          _safe(info.get("trailingPE")),
-            "pe_forward":        _safe(info.get("forwardPE")),
-            "eps_ttm":           _safe(info.get("trailingEps")),
+            # PE / valuation
+            "pe_ratio":          first(tds.get("pe_ratio"),          info.get("trailingPE")),
+            "pe_forward":        first(tds.get("pe_forward"),         info.get("forwardPE")),
+            "eps_ttm":           first(tds.get("eps_ttm"),            info.get("trailingEps")),
             "eps_forward":       _safe(info.get("forwardEps")),
-            "gross_margins":     _safe(info.get("grossMargins")),
-            "profit_margins":    _safe(info.get("profitMargins")),
-            "operating_margins": _safe(info.get("operatingMargins")),
+            "price_to_book":     first(tds.get("price_to_book"),      info.get("priceToBook")),
+            "ev_ebitda":         first(tds.get("ev_ebitda"),          info.get("enterpriseToEbitda")),
+            # Margins
+            "gross_margins":     _safe(info.get("grossMargins")),     # not in TD stats
+            "profit_margins":    first(tds.get("profit_margins"),     info.get("profitMargins")),
+            "operating_margins": first(tds.get("operating_margins"),  info.get("operatingMargins")),
+            # Return metrics
             "roe":               roe,
-            "roa":               _safe(info.get("returnOnAssets")),
-            "debt_equity":       _safe(info.get("debtToEquity")),
-            "current_ratio":     _safe(info.get("currentRatio")),
+            "roa":               first(tds.get("roa"),                info.get("returnOnAssets")),
+            # Risk / structure
+            "beta":              first(tds.get("beta"),               info.get("beta")),
+            "debt_equity":       first(tds.get("debt_equity"),        info.get("debtToEquity")),
+            "current_ratio":     first(tds.get("current_ratio"),      info.get("currentRatio")),
             "quick_ratio":       _safe(info.get("quickRatio")),
-            "dividend_yield":    _safe(info.get("dividendYield")),
-            "week52_high":       _safe(info.get("fiftyTwoWeekHigh")),
-            "week52_low":        _safe(info.get("fiftyTwoWeekLow")),
-            "beta":              _safe(info.get("beta")),
-            "price_to_book":     _safe(info.get("priceToBook")),
-            "ev_ebitda":         _safe(info.get("enterpriseToEbitda")),
-            "market_cap":        info.get("marketCap"),
-            "free_cashflow":     info.get("freeCashflow"),
-            "total_cash":        info.get("totalCash"),
-            "total_debt":        info.get("totalDebt"),
+            # Income / dividends
+            "dividend_yield":    first(tds.get("dividend_yield"),     info.get("dividendYield")),
+            # 52-week range: TD stats → fast_info → .info
+            "week52_high":       first(tds.get("week52_high"),        fi_data.get("week52_high"),  info.get("fiftyTwoWeekHigh")),
+            "week52_low":        first(tds.get("week52_low"),         fi_data.get("week52_low"),   info.get("fiftyTwoWeekLow")),
+            # Market cap: TD stats → fast_info → .info
+            "market_cap":        first(tds.get("market_cap"),         fi_data.get("market_cap"),   info.get("marketCap")),
+            # Cash flow
+            "free_cashflow":     first(tds.get("free_cashflow"),      info.get("freeCashflow")),
+            "total_cash":        first(tds.get("total_cash"),         info.get("totalCash")),
+            "total_debt":        first(tds.get("total_debt"),         info.get("totalDebt")),
         }
         _set(k, data, 3600)
         return data
     except Exception as e:
         return {"error": str(e)}
+
 
 
 def get_analyst(symbol):
