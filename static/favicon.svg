@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">FinAssist</title>
+  <defs>
+    <linearGradient id="background" x1="8" y1="56" x2="56" y2="8" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#4f46e5"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#background)"/>
+  <path d="M31 13a19 19 0 1 0 19 19H31V13Z" fill="#fff"/>
+  <path d="M36 13.7A19 19 0 0 1 49.3 27H36V13.7Z" fill="#bfdbfe"/>
+  <circle cx="31" cy="32" r="3.5" fill="#2563eb"/>
+</svg>
