@@ -35,6 +35,10 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "fallback-dev-key")
 def health():
     return 'ok', 200
 
+@app.route('/favicon.ico')
+def favicon():
+    return app.send_static_file('favicon.ico')
+
 # ─── Portfolio API Routes ──────────────────────────────────────────────────────
 @app.route('/api/portfolio/identify', methods=['POST'])
 def portfolio_identify():
