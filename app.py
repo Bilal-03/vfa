@@ -801,6 +801,11 @@ import re as _re
 from groq import Groq as GroqClient
 
 _GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+# Groq retired llama-3.1-8b-instant on 2026-08-16.  GPT-OSS 20B is the
+# documented replacement and is available within Groq's free-plan limits.
+# Keep the model configurable so a future Groq retirement only needs an env
+# var update instead of a code change.
+_GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b").strip() or "openai/gpt-oss-20b"
 _groq_client = None
 
 GROQ_SYSTEM_PROMPT = (
@@ -835,7 +840,7 @@ def _ask_groq(prompt):
     try:
         client = _get_groq_client()
         chat = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
+            model=_GROQ_MODEL,
             messages=[
                 {"role": "system", "content": GROQ_SYSTEM_PROMPT},
                 {"role": "user",   "content": prompt},

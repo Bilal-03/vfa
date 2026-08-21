@@ -29,6 +29,11 @@ A comprehensive Flask-based financial web application that combines real-time ma
 - **Tool Guidance** - Get help using any calculator or feature
 - **Investment Tips** - AI-powered financial advice and insights
 
+The chat uses Groq's free API tier by default with `openai/gpt-oss-20b`. The
+retired `llama-3.1-8b-instant` model must not be used. Set `GROQ_MODEL` only
+when you want to choose another model available to your Groq account; no paid
+Groq plan is required for the default model.
+
 ### 🧮 **Financial Calculators**
 - **EMI Calculator** - Calculate home, car, and personal loan payments
 - **SIP Calculator** - Project mutual fund returns with systematic investment planning
@@ -365,6 +370,8 @@ FLASK_ENV=production
 SECRET_KEY=your-secret-key-here
 
 # API Keys (add your actual keys)
+GROQ_API_KEY=your-free-groq-api-key
+GROQ_MODEL=openai/gpt-oss-20b
 NSE_API_KEY=your-nse-api-key
 YAHOO_FINANCE_KEY=your-yahoo-finance-key
 CURRENCY_API_KEY=your-currency-api-key
