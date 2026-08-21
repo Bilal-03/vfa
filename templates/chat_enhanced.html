@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Virtual Finance Assistant</title>
-    <link rel="icon" href="{{ url_for('favicon', v='3') }}" type="image/x-icon">
-    <link rel="icon" href="{{ url_for('static', filename='favicon.png', v='3') }}" type="image/png" sizes="180x180">
-    <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon.png', v='3') }}" sizes="180x180">
-    <link rel="icon" href="{{ url_for('static', filename='favicon.svg', v='3') }}" type="image/svg+xml">
+    <title>FinAssist – Virtual Finance Assistant</title>
+    <meta name="application-name" content="FinAssist">
+    <link rel="icon" href="{{ url_for('favicon', v='4') }}" type="image/x-icon">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.png', v='4') }}" type="image/png" sizes="180x180">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon.png', v='4') }}" sizes="180x180">
+    <link rel="icon" href="{{ url_for('static', filename='finassist-mark.svg', v='4') }}" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -693,11 +694,7 @@
 
 <div class="col-md-3 menu-sidebar">
     <div class="sidebar-brand">
-        <div class="brand-icon"><i class="fas fa-chart-pie"></i></div>
-        <div class="brand-text">
-            <span class="brand-name">FinAssist</span>
-            <span class="brand-sub">Virtual Finance Assistant</span>
-        </div>
+        <img class="brand-logo" src="{{ url_for('static', filename='finassist-logo.svg') }}" alt="FinAssist — Virtual Finance Assistant">
     </div>
 
     <div style="padding:6px 0 2px;">
@@ -803,7 +800,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
     <!-- Header -->
     <div class="card-header">
-        <h5><i class="fas fa-robot"></i> Virtual Finance Assistant</h5>
+        <h5><img class="inline-brand-mark" src="{{ url_for('static', filename='finassist-mark.svg') }}" alt=""> FinAssist AI</h5>
     </div>
 
     <!-- Ticker Bar -->
@@ -870,12 +867,13 @@ document.addEventListener('DOMContentLoaded', function(){
         z-index:2;
     }
     .hero-center-icon {
-        width:72px; height:72px; background:linear-gradient(135deg,#2563eb,#7c3aed);
+        width:72px; height:72px; background:transparent;
         border-radius:20px; display:flex; align-items:center; justify-content:center;
-        font-size:1.8rem; color:#fff; animation:pulse 3s ease-in-out infinite;
-        box-shadow: 0 8px 32px rgba(37,99,235,0.4);
+        animation:pulse 3s ease-in-out infinite;
+        filter:drop-shadow(0 8px 18px rgba(16,42,67,0.38));
         z-index:3; position:relative;
     }
+    .hero-center-icon img { display:block; width:72px; height:72px; }
     .orbit-dot {
         position:absolute; top:50%; left:50%;
         width:28px; height:28px; border-radius:9px;
@@ -961,7 +959,7 @@ document.addEventListener('DOMContentLoaded', function(){
             <div class="home-hero-v2">
                 <!-- Orbit icon cluster -->
                 <div class="hero-icon-cluster">
-                    <div class="hero-center-icon"><i class="fas fa-chart-pie"></i></div>
+                    <div class="hero-center-icon"><img src="{{ url_for('static', filename='finassist-mark.svg') }}" alt="FinAssist logo"></div>
                     <div class="orbit-dot"><i class="fas fa-chart-line"></i></div>
                     <div class="orbit-dot"><i class="fas fa-coins"></i></div>
                     <div class="orbit-dot"><i class="fas fa-piggy-bank"></i></div>
@@ -1560,10 +1558,10 @@ document.addEventListener('DOMContentLoaded', function(){
 }
 .chat-empty-icon {
     width:64px; height:64px;
-    background:linear-gradient(135deg,rgba(37,99,235,.1),rgba(124,58,237,.1));
-    border-radius:20px; display:flex; align-items:center; justify-content:center;
-    font-size:1.8rem;
+    border-radius:18px; display:flex; align-items:center; justify-content:center;
+    filter:drop-shadow(0 6px 14px rgba(16,42,67,.18));
 }
+.chat-empty-icon img { display:block; width:64px; height:64px; }
 .chat-empty-state h3 { font-size:1.1rem; font-weight:700; color:#334155; margin:0; }
 .chat-empty-state p  { font-size:.88rem; color:#64748b; max-width:360px; margin:0; line-height:1.6; }
 .chat-suggestions { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:6px; }

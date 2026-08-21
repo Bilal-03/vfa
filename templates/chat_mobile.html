@@ -7,11 +7,12 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#2563eb">
-    <title>VFA – Virtual Finance Assistant</title>
-    <link rel="icon" href="{{ url_for('favicon', v='3') }}" type="image/x-icon">
-    <link rel="icon" href="{{ url_for('static', filename='favicon.png', v='3') }}" type="image/png" sizes="180x180">
-    <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon.png', v='3') }}" sizes="180x180">
-    <link rel="icon" href="{{ url_for('static', filename='favicon.svg', v='3') }}" type="image/svg+xml">
+    <title>FinAssist – Virtual Finance Assistant</title>
+    <meta name="application-name" content="FinAssist">
+    <link rel="icon" href="{{ url_for('favicon', v='4') }}" type="image/x-icon">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.png', v='4') }}" type="image/png" sizes="180x180">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon.png', v='4') }}" sizes="180x180">
+    <link rel="icon" href="{{ url_for('static', filename='finassist-mark.svg', v='4') }}" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -120,7 +121,7 @@
             <!-- Icon + Title row -->
             <div class="home-hero-main">
                 <div class="home-hero-icon-cluster">
-                    <div class="home-hero-center-icon"><i class="fas fa-chart-pie"></i></div>
+                    <div class="home-hero-center-icon"><img src="{{ url_for('static', filename='finassist-mark.svg') }}" alt="FinAssist logo"></div>
                     <div class="hero-orbit-dot hero-orbit-a"><i class="fas fa-chart-line"></i></div>
                     <div class="hero-orbit-dot hero-orbit-b"><i class="fas fa-coins"></i></div>
                     <div class="hero-orbit-dot hero-orbit-c"><i class="fas fa-piggy-bank"></i></div>
@@ -210,12 +211,12 @@
     <div id="chatScreen" class="screen">
         <div class="screen-header">
             <button class="back-btn" onclick="goHome()"><i class="fas fa-arrow-left"></i></button>
-            <span class="screen-title"><i class="fas fa-robot" style="color:#2563eb;"></i> AI Chat</span>
+            <span class="screen-title"><img class="screen-brand-mark" src="{{ url_for('static', filename='finassist-mark.svg') }}" alt=""> AI Chat</span>
             <button class="header-action" onclick="clearChat()"><i class="fas fa-trash-alt"></i></button>
         </div>
         <div id="chatMessages" class="chat-messages">
             <div class="chat-empty">
-                <div class="chat-empty-icon"><i class="fas fa-robot"></i></div>
+                <div class="chat-empty-icon"><img src="{{ url_for('static', filename='finassist-mark.svg') }}" alt="FinAssist logo"></div>
                 <h3>FinAssist AI</h3>
                 <p>Ask me anything about NSE/BSE stocks, SIP, mutual funds, EMI, taxes, or personal finance.</p>
                 <div class="chat-chips">
@@ -1239,7 +1240,7 @@ function escHtml(t) {
 function clearChat() {
     const msgs = document.getElementById('chatMessages');
     msgs.innerHTML = `<div class="chat-empty">
-        <div class="chat-empty-icon"><i class="fas fa-robot"></i></div>
+        <div class="chat-empty-icon"><img src="{{ url_for('static', filename='finassist-mark.svg') }}" alt="FinAssist logo"></div>
         <h3>FinAssist AI</h3>
         <p>Ask me anything about NSE/BSE stocks, SIP, mutual funds, EMI, taxes, or personal finance.</p>
         <div class="chat-chips">

@@ -255,19 +255,18 @@ body {
 .home-hero-center-icon {
     width: 46px;
     height: 46px;
-    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    background: transparent;
     border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
-    color: #fff;
     position: relative;
     z-index: 3;
-    box-shadow: 0 6px 20px rgba(37,99,235,.45);
+    filter: drop-shadow(0 6px 14px rgba(16,42,67,.4));
     animation: heroPulse 3s ease-in-out infinite;
 }
-@keyframes heroPulse { 0%,100%{box-shadow:0 6px 20px rgba(37,99,235,.45)} 50%{box-shadow:0 6px 28px rgba(37,99,235,.65)} }
+.home-hero-center-icon img { display:block; width:46px; height:46px; }
+@keyframes heroPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
 
 .hero-orbit-dot {
     position: absolute;
@@ -737,14 +736,14 @@ body {
 .chat-empty-icon {
     width: 56px;
     height: 56px;
-    background: linear-gradient(135deg, rgba(37,99,235,.12), rgba(124,58,237,.12));
     border-radius: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 22px;
-    color: #2563eb;
+    filter: drop-shadow(0 5px 12px rgba(16,42,67,.18));
 }
+.chat-empty-icon img { display:block; width:56px; height:56px; }
+.screen-brand-mark { width:24px; height:24px; border-radius:7px; display:block; }
 .chat-empty h3 { font-size: 16px; font-weight: 800; color: #334155; }
 .chat-empty p  { font-size: 13px; color: #64748b; max-width: 260px; line-height: 1.6; }
 .chat-chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 4px; }

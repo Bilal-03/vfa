@@ -14,6 +14,10 @@
   --accent:       #2563eb;
   --accent-light: #eff4ff;
   --accent-glow:  rgba(37,99,235,0.18);
+  --brand-navy:   #102a43;
+  --brand-blue:   #1d4ed8;
+  --brand-indigo: #4f46e5;
+  --brand-mint:   #2dd4bf;
 
   --green:        #059669;
   --green-bg:     rgba(5,150,105,0.08);
@@ -107,6 +111,7 @@ body::before {
 }
 .card-header h5 { font-size: 1rem; font-weight: 700; color: var(--text); margin: 0; display: flex; align-items: center; gap: 10px; }
 .card-header h5 i { color: var(--accent); }
+.inline-brand-mark { width: 26px; height: 26px; border-radius: 8px; display: block; flex-shrink: 0; }
 .card-body { flex: 1; padding: 0; overflow-y: auto; }
 
 /* ── WIDGET CARD STYLES ───────────────────────────────────────────────── */
@@ -508,28 +513,12 @@ input[type="number"].form-control { background-image: none !important; padding-r
   border-bottom: 1px solid var(--border);
 }
 
-.brand-icon {
-  width: 44px;
-  height: 44px;
-  background: linear-gradient(135deg, #2563eb, #7c3aed);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 1.2rem;
+.brand-logo {
+  display: block;
+  width: 218px;
+  height: auto;
   flex-shrink: 0;
-  box-shadow: 0 4px 14px rgba(37,99,235,0.35);
-  animation: brandPulse 3s ease-in-out infinite;
 }
-@keyframes brandPulse {
-  0%, 100% { box-shadow: 0 4px 14px rgba(37,99,235,0.35); }
-  50%       { box-shadow: 0 4px 20px rgba(37,99,235,0.55), 0 0 0 6px rgba(37,99,235,0.08); }
-}
-
-.brand-text { display: flex; flex-direction: column; gap: 2px; }
-.brand-name { font-size: 1.12rem; font-weight: 800; color: var(--text); letter-spacing: -0.02em; line-height: 1; }
-.brand-sub { font-size: 0.68rem; font-weight: 500; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .menu-categories { padding: 4px 12px; display: flex; flex-direction: column; gap: 2px; }
 
@@ -632,20 +621,19 @@ input[type="number"].form-control { background-image: none !important; padding-r
 .home-hero-icon {
   width: 58px;
   height: 58px;
-  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  background: transparent;
   border-radius: 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
-  color: white;
   margin-bottom: 18px;
-  box-shadow: 0 8px 28px rgba(37,99,235,0.35);
+  filter: drop-shadow(0 8px 18px rgba(16,42,67,0.32));
   animation: heroIconPulse 2.5s ease-in-out infinite;
 }
+.home-hero-icon img { display:block; width:58px; height:58px; }
 @keyframes heroIconPulse {
-  0%, 100% { box-shadow: 0 8px 28px rgba(37,99,235,0.35); transform: scale(1); }
-  50%       { box-shadow: 0 12px 36px rgba(37,99,235,0.5), 0 0 0 10px rgba(37,99,235,0.07); transform: scale(1.04); }
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.04); }
 }
 
 .home-hero h1 {
