@@ -1,0 +1,20 @@
+{
+  "name": "unified_app",
+  "version": "1.0.0",
+  "description": "Virtual Finance Assistant",
+  "main": "app.py",
+  "scripts": {
+    "dev": "./.venv/bin/python app.py",
+    "install-py": "./.venv/bin/python -m pip install -r requirements.txt",
+    "start": "gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120",
+    "test:research": "./.venv/bin/python -m pytest tests/test_research.py -q",
+    "test:insights": "./.venv/bin/python -m pytest tests/test_insights.py -q",
+    "dev:local": "PORT=5003 PORTFOLIO_STORAGE=sqlite ./.venv/bin/python app.py",
+    "demo:insights": "PORT=5004 PORTFOLIO_STORAGE=sqlite STOCK_INSIGHTS_AS_OF= STOCK_INSIGHTS_SNAPSHOT_DIR= ./.venv/bin/python app.py",
+    "demo:insights:historical": "PORT=5005 PORTFOLIO_STORAGE=sqlite STOCK_INSIGHTS_AS_OF=2026-10-09T23:59:00Z STOCK_INSIGHTS_SNAPSHOT_DIR=insights/data ./.venv/bin/python app.py",
+    "evaluate:insights": "./.venv/bin/python -m insights.evaluate",
+    "test:insight-visuals": "node --test tests/test_insight_visuals.cjs"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

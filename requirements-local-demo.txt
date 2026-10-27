@@ -1,0 +1,9 @@
+-r requirements-research.txt
+Flask
+python-dotenv
+supabase==2.15.1
+cryptography==42.0.8
+groq
+beautifulsoup4
+openpyxl
+lxml

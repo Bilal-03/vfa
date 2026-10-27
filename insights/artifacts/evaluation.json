@@ -1,0 +1,354 @@
+{
+  "config": {
+    "version": "stock-insights-1.0",
+    "parameters": {
+      "regression_sessions": 120,
+      "residual_sessions": 60,
+      "alert_threshold": 3.5,
+      "volume_sessions": 20,
+      "portfolio_min_returns": 120,
+      "annual_sessions": 252,
+      "minimum_windows": 30,
+      "horizons": {
+        "1": 21,
+        "3": 63,
+        "6": 126,
+        "12": 252
+      }
+    },
+    "seed": 42,
+    "evaluation_fraction": 0.2,
+    "portfolio_training": "expanding prior observations; minimum 120",
+    "portfolio_future_sessions": 21,
+    "portfolio_origin_step": 21,
+    "portfolio_weights": {
+      "before": [
+        0.5,
+        0.5,
+        0
+      ],
+      "after": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ]
+    },
+    "movement_evaluation_step": 21,
+    "injected_return_deviation": 0.08,
+    "universe_policy": "Fixed six-symbol universe from the approved plan; not selected by outcomes."
+  },
+  "environment": {
+    "python": "3.11.15",
+    "numpy": "1.26.4",
+    "pandas": "2.3.3",
+    "sklearn": "1.9.1",
+    "yfinance": "1.7.0",
+    "market_calendars": "5.5.0"
+  },
+  "source_hashes": {
+    "stock_insights.py": "c4262d5453f66cf496267001d9ff96727e17805ed57c506ab154f320cfc7c8a5",
+    "insights_service.py": "9d70bc5f02a405285490eea8beab790a59890ad1d2424814dec526b78bffbaa5",
+    "/Users/bilal/Downloads/projects/finassist/insights/evaluate.py": "28515e351c973ecb5dc9fe4d8e40591f478020bbf2b156ce1ab059c1182f8214"
+  },
+  "coverage": {
+    "TCS.NS": {
+      "source": "Yahoo Finance via yfinance",
+      "price_basis": "adjusted daily close",
+      "fetched_at": "2026-10-12T19:44:17.094153+00:00",
+      "expected_session": "2026-10-12",
+      "observation_date": "2026-10-09",
+      "stale": true,
+      "coverage": {
+        "start": "2021-10-12",
+        "end": "2026-10-09",
+        "valid_prices": 1233,
+        "duplicates_removed": 0,
+        "missing_sessions": 1,
+        "split_events": 0,
+        "warnings": [
+          "Invalid prices were marked missing; no interpolation or backward filling was used.",
+          "1 scheduled session(s) have missing prices; affected return windows are excluded."
+        ]
+      },
+      "snapshot_sha256": "68b6ac1d695c9758559829216af331296727213db21653fd0331c39b5f555c24"
+    },
+    "INFY.NS": {
+      "source": "Yahoo Finance via yfinance",
+      "price_basis": "adjusted daily close",
+      "fetched_at": "2026-10-12T19:44:17.112230+00:00",
+      "expected_session": "2026-10-12",
+      "observation_date": "2026-10-09",
+      "stale": true,
+      "coverage": {
+        "start": "2021-10-12",
+        "end": "2026-10-09",
+        "valid_prices": 1233,
+        "duplicates_removed": 0,
+        "missing_sessions": 1,
+        "split_events": 0,
+        "warnings": [
+          "Invalid prices were marked missing; no interpolation or backward filling was used.",
+          "1 scheduled session(s) have missing prices; affected return windows are excluded."
+        ]
+      },
+      "snapshot_sha256": "99f76bda7e2e4f3100a88ec91eae0783dd7e75c378d77e8bf547dc1811b9a451"
+    },
+    "SBIN.NS": {
+      "source": "Yahoo Finance via yfinance",
+      "price_basis": "adjusted daily close",
+      "fetched_at": "2026-10-12T19:44:17.138957+00:00",
+      "expected_session": "2026-10-12",
+      "observation_date": "2026-10-09",
+      "stale": true,
+      "coverage": {
+        "start": "2021-10-12",
+        "end": "2026-10-09",
+        "valid_prices": 1233,
+        "duplicates_removed": 0,
+        "missing_sessions": 1,
+        "split_events": 0,
+        "warnings": [
+          "Invalid prices were marked missing; no interpolation or backward filling was used.",
+          "1 scheduled session(s) have missing prices; affected return windows are excluded."
+        ]
+      },
+      "snapshot_sha256": "2988d3594cc8601fa4c5902a5ed65bb15b717f23e10dd7db8c1bd00a88858a4a"
+    },
+    "^NSEI": {
+      "source": "Yahoo Finance via yfinance",
+      "price_basis": "adjusted daily close",
+      "fetched_at": "2026-10-12T19:45:38.981509+00:00",
+      "analysis_mode": "live",
+      "analysis_as_of": "2026-10-12T19:45:38.981509+00:00",
+      "expected_session": "2026-10-12",
+      "observation_date": "2026-10-09",
+      "stale": true,
+      "coverage": {
+        "start": "2021-10-12",
+        "end": "2026-10-09",
+        "valid_prices": 1233,
+        "duplicates_removed": 0,
+        "missing_sessions": 1,
+        "split_events": 0,
+        "warnings": [
+          "Invalid prices were marked missing; no interpolation or backward filling was used.",
+          "1 scheduled session(s) have missing prices; affected return windows are excluded."
+        ]
+      },
+      "snapshot_sha256": "2b7bcaa4d48829625c0ffc044b3208c6bd3fa6abd120ba616309fd779dd59f26"
+    },
+    "AAPL": {
+      "source": "Yahoo Finance via yfinance",
+      "price_basis": "adjusted daily close",
+      "fetched_at": "2026-10-12T19:44:17.183914+00:00",
+      "expected_session": "2026-10-09",
+      "observation_date": "2026-10-09",
+      "stale": false,
+      "coverage": {
+        "start": "2021-10-12",
+        "end": "2026-10-09",
+        "valid_prices": 1254,
+        "duplicates_removed": 0,
+        "missing_sessions": 0,
+        "split_events": 0,
+        "warnings": []
+      },
+      "snapshot_sha256": "7ff5c3ef8b4f7d7e1a316083a9e7b7d1dceec81da834a0dd0a2ad7e8f74e56f2"
+    },
+    "MSFT": {
+      "source": "Yahoo Finance via yfinance",
+      "price_basis": "adjusted daily close",
+      "fetched_at": "2026-10-12T19:44:19.322935+00:00",
+      "expected_session": "2026-10-09",
+      "observation_date": "2026-10-09",
+      "stale": false,
+      "coverage": {
+        "start": "2021-10-12",
+        "end": "2026-10-09",
+        "valid_prices": 1254,
+        "duplicates_removed": 0,
+        "missing_sessions": 0,
+        "split_events": 0,
+        "warnings": []
+      },
+      "snapshot_sha256": "bf8b1c05574ecbf41b87f13cfdae07ba50502ce2c3b8dec976b0749f2b2390bf"
+    },
+    "NVDA": {
+      "source": "Yahoo Finance via yfinance",
+      "price_basis": "adjusted daily close",
+      "fetched_at": "2026-10-12T19:44:19.335358+00:00",
+      "expected_session": "2026-10-09",
+      "observation_date": "2026-10-09",
+      "stale": false,
+      "coverage": {
+        "start": "2021-10-12",
+        "end": "2026-10-09",
+        "valid_prices": 1254,
+        "duplicates_removed": 0,
+        "missing_sessions": 0,
+        "split_events": 1,
+        "warnings": []
+      },
+      "snapshot_sha256": "b9cf16b8b4ca5e384e5f4c1499df8383e3bae900f5a6a2a080fb4348aff0ff19"
+    },
+    "^GSPC": {
+      "source": "Yahoo Finance via yfinance",
+      "price_basis": "adjusted daily close",
+      "fetched_at": "2026-10-12T19:44:19.401323+00:00",
+      "expected_session": "2026-10-09",
+      "observation_date": "2026-10-09",
+      "stale": false,
+      "coverage": {
+        "start": "2021-10-12",
+        "end": "2026-10-09",
+        "valid_prices": 1254,
+        "duplicates_removed": 0,
+        "missing_sessions": 0,
+        "split_events": 0,
+        "warnings": []
+      },
+      "snapshot_sha256": "8f3a95f042c660aea6fdbfc7e13e4cc49ba0e2349d5ba79bcc8a2c809007fc63"
+    }
+  },
+  "failures": [],
+  "portfolio": [
+    {
+      "market": "India",
+      "portfolio": "after",
+      "method": "ledoit_wolf",
+      "origins": 11,
+      "mae_annualized_volatility": 0.051622859793353175
+    },
+    {
+      "market": "India",
+      "portfolio": "after",
+      "method": "sample",
+      "origins": 11,
+      "mae_annualized_volatility": 0.05155855247766034
+    },
+    {
+      "market": "India",
+      "portfolio": "before",
+      "method": "ledoit_wolf",
+      "origins": 11,
+      "mae_annualized_volatility": 0.07949672477893442
+    },
+    {
+      "market": "India",
+      "portfolio": "before",
+      "method": "sample",
+      "origins": 11,
+      "mae_annualized_volatility": 0.07898121499825171
+    },
+    {
+      "market": "US",
+      "portfolio": "after",
+      "method": "ledoit_wolf",
+      "origins": 11,
+      "mae_annualized_volatility": 0.09003649458219032
+    },
+    {
+      "market": "US",
+      "portfolio": "after",
+      "method": "sample",
+      "origins": 11,
+      "mae_annualized_volatility": 0.09126543575001969
+    },
+    {
+      "market": "US",
+      "portfolio": "before",
+      "method": "ledoit_wolf",
+      "origins": 11,
+      "mae_annualized_volatility": 0.06584526976256065
+    },
+    {
+      "market": "US",
+      "portfolio": "before",
+      "method": "sample",
+      "origins": 11,
+      "mae_annualized_volatility": 0.06573290261698743
+    }
+  ],
+  "movement": [
+    {
+      "market": "India",
+      "scenario": "broad_market_shock",
+      "cases": 36,
+      "raw_assessable": 36,
+      "adjusted_assessable": 36,
+      "raw_alert_rate": 0.8055555555555556,
+      "adjusted_alert_rate": 0.0,
+      "unavailable": 0
+    },
+    {
+      "market": "India",
+      "scenario": "missing_stock_price",
+      "cases": 36,
+      "raw_assessable": 0,
+      "adjusted_assessable": 0,
+      "raw_alert_rate": null,
+      "adjusted_alert_rate": null,
+      "unavailable": 36
+    },
+    {
+      "market": "India",
+      "scenario": "normal",
+      "cases": 36,
+      "raw_assessable": 36,
+      "adjusted_assessable": 36,
+      "raw_alert_rate": 0.0,
+      "adjusted_alert_rate": 0.0,
+      "unavailable": 0
+    },
+    {
+      "market": "India",
+      "scenario": "stock_specific_shock",
+      "cases": 36,
+      "raw_assessable": 36,
+      "adjusted_assessable": 36,
+      "raw_alert_rate": 0.9444444444444444,
+      "adjusted_alert_rate": 0.9722222222222222,
+      "unavailable": 0
+    },
+    {
+      "market": "US",
+      "scenario": "broad_market_shock",
+      "cases": 36,
+      "raw_assessable": 36,
+      "adjusted_assessable": 36,
+      "raw_alert_rate": 0.8055555555555556,
+      "adjusted_alert_rate": 0.027777777777777776,
+      "unavailable": 0
+    },
+    {
+      "market": "US",
+      "scenario": "missing_stock_price",
+      "cases": 36,
+      "raw_assessable": 0,
+      "adjusted_assessable": 0,
+      "raw_alert_rate": null,
+      "adjusted_alert_rate": null,
+      "unavailable": 36
+    },
+    {
+      "market": "US",
+      "scenario": "normal",
+      "cases": 36,
+      "raw_assessable": 36,
+      "adjusted_assessable": 36,
+      "raw_alert_rate": 0.08333333333333333,
+      "adjusted_alert_rate": 0.027777777777777776,
+      "unavailable": 0
+    },
+    {
+      "market": "US",
+      "scenario": "stock_specific_shock",
+      "cases": 36,
+      "raw_assessable": 36,
+      "adjusted_assessable": 36,
+      "raw_alert_rate": 0.8611111111111112,
+      "adjusted_alert_rate": 0.9444444444444444,
+      "unavailable": 0
+    }
+  ]
+}

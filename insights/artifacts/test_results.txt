@@ -1,0 +1,3 @@
+Python suite (`./.venv_research/bin/python -m pytest tests -q`): 48 passed.
+Node visual suite (`node --test tests/test_insight_visuals.cjs`): 6 passed.
+Total automated checks: 54 passed.

@@ -1,0 +1,30 @@
+{
+  "India": {
+    "source": "https://zenodo.org/api/records/16991843/files/IN-FINews%20Dataset.csv/content",
+    "sha256": "fa38c44557e7e7964ffc0c724dc5e2447c5f6ecca9ae2a23426f280da5e30535",
+    "raw_rows": 3348,
+    "accepted_rows": 204,
+    "start": "2025-02-12",
+    "end": "2025-08-08",
+    "date_policy": "Date only: eligible strictly after publication day",
+    "symbols": [
+      "TCS.NS",
+      "INFY.NS",
+      "SBIN.NS"
+    ]
+  },
+  "US": {
+    "source": "https://raw.githubusercontent.com/pmoe7/Stock-Market-Data/main/sp500_news_290k_articles.csv",
+    "sha256": "dff705d5b125e8a31f14e278442b4fbcef578da50dee8c9df52c90a6a46f5a2a",
+    "raw_rows": 290728,
+    "accepted_rows": 3793,
+    "start": "2022-03-04",
+    "end": "2023-03-04",
+    "date_policy": "Date only: eligible strictly after publication day",
+    "symbols": [
+      "AAPL",
+      "MSFT",
+      "NVDA"
+    ]
+  }
+}

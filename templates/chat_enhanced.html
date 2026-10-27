@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-portfolio-storage="{{ portfolio_storage|default('supabase') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,7 +17,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style_enhanced.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='stock_dashboard.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='portfolio_watchlist.css') }}">
     <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
     <style>
     /* ── Portfolio Modal Fix ── */
@@ -628,7 +627,7 @@
         margin-left: 2px;
     }
     .pt-switch-btn:hover { color: #dc2626; }
-    
+
     </style>
 </head>
 <body>
@@ -710,6 +709,9 @@
             <div class="sb-icon"><i class="fas fa-comments"></i></div><span>AI Chat Mode</span>
         </button>
     </div>
+
+    <div class="sb-sep"></div>
+
 
     <div class="sb-sep"></div>
 
@@ -1064,29 +1066,29 @@ document.addEventListener('DOMContentLoaded', function(){
             <div class="market-widgets-grid">
                 <div class="feature-card widget-card">
                     <div class="widget-header">
-                        <div class="widget-title"><i class="fas fa-arrow-trend-up"></i> Top Gainers</div>
-                        <div class="widget-status">Live</div>
+                        <div class="widget-title"><i class="fas fa-arrow-trend-up" style="color:var(--green);"></i> Top Gainers</div>
+                        <div class="widget-status" style="color:var(--green);background:var(--green-bg);">Live</div>
                     </div>
                     <div class="widget-body" id="topGainersList"><div class="widget-loading">Loading...</div></div>
                 </div>
                 <div class="feature-card widget-card">
                     <div class="widget-header">
-                        <div class="widget-title"><i class="fas fa-arrow-trend-down"></i> Top Losers</div>
-                        <div class="widget-status">Live</div>
+                        <div class="widget-title"><i class="fas fa-arrow-trend-down" style="color:#dc2626;"></i> Top Losers</div>
+                        <div class="widget-status" style="color:#dc2626;background:#fef2f2;">Live</div>
                     </div>
                     <div class="widget-body" id="topLosersList"><div class="widget-loading">Loading...</div></div>
                 </div>
                 <div class="feature-card widget-card">
                     <div class="widget-header">
-                        <div class="widget-title"><i class="fas fa-chart-bar"></i> Top Volume</div>
-                        <div class="widget-status">Live</div>
+                        <div class="widget-title"><i class="fas fa-chart-bar" style="color:#2563eb;"></i> Top Volume</div>
+                        <div class="widget-status" style="color:#2563eb;background:#eff6ff;">Live</div>
                     </div>
                     <div class="widget-body" id="topVolumeList"><div class="widget-loading">Loading...</div></div>
                 </div>
                 <div class="feature-card widget-card">
                     <div class="widget-header">
-                        <div class="widget-title"><i class="fas fa-money-bill-trend-up"></i> Top Value</div>
-                        <div class="widget-status">Live</div>
+                        <div class="widget-title"><i class="fas fa-money-bill-trend-up" style="color:#d97706;"></i> Top Value</div>
+                        <div class="widget-status" style="color:#d97706;background:#fffbeb;">Live</div>
                     </div>
                     <div class="widget-body" id="topTurnoverList"><div class="widget-loading">Loading...</div></div>
                 </div>
@@ -1303,12 +1305,19 @@ document.addEventListener('DOMContentLoaded', function(){
         </div>
         <div id="pt-summary-bar" style="padding:12px 24px 0;flex-shrink:0;"></div>
         <div class="pt-scroll-area">
-            <div id="pt-content"></div>
+            {% if portfolio_storage == 'sqlite' %}<p style="padding:10px 16px;color:#64748b;font-size:12px;">Laptop storage · holdings stay on this computer.</p>{% endif %}
+<div id="pt-content"></div>
         </div>
     </div>
 
     <!-- WATCHLIST PANEL — removed -->
     <div id="watchlistPanel" style="display:none !important;"></div>
+
+    <div id="researchStudioPanel" style="display:none;padding:24px;flex-direction:column;gap:16px;overflow-y:auto;min-width:0">
+      <h2>FinAssist Research Evidence</h2>
+      <p>Lightweight financial trend prediction with news freshness and missing-news awareness. Chronological holdout results; exploratory evidence, not investment advice.</p>
+      <div id="research-evidence">Loading recorded experiments...</div>
+    </div>
 
     <!-- ADD HOLDING MODAL -->
     <div class="pt-modal-overlay" id="pt-modal" onclick="if(event.target===this)FinTracker.closeModal()">
@@ -1344,17 +1353,17 @@ document.addEventListener('DOMContentLoaded', function(){
 
         <div id="stockForm" class="input-form" style="display:none;">
     <h5><i class="fas fa-chart-line"></i> Stock Information</h5>
-    
+
     <div class="form-group">
         <label>Search Stock Name or Ticker</label>
         <div class="search-wrapper">
-            <input type="text" class="form-control" id="stockName" 
-                   placeholder="Type to search (e.g. Reliance, Tata, HDFC)..." 
+            <input type="text" class="form-control" id="stockName"
+                   placeholder="Type to search (e.g. Reliance, Tata, HDFC)..."
                    autocomplete="off">
             <div id="customStockDropdown" class="custom-dropdown"></div>
         </div>
     </div>
-    
+
     <button class="btn btn-primary btn-block" onclick="submitStockForm()">
         <i class="fas fa-search"></i> Get Stock Info
     </button>
@@ -1721,6 +1730,61 @@ let stockData   = {};
 fetch("{{ url_for('static', filename='stock_logos.json') }}")
     .then(r=>r.json()).then(d=>{stockData=d;}).catch(()=>{});
 
+window.renderStockSquircle = function(symbol, name, sz='32px', r='8px') {
+    const s = (symbol || '').toUpperCase().trim();
+    const cleanKey = s.replace('.NS','').replace('.BO','');
+    const isUS = ['AAPL','MSFT','GOOGL','GOOG','AMZN','META','TSLA','NVDA','NFLX','AMD','INTC','JPM','BAC','V','MA','WMT','DIS'].includes(cleanKey);
+    const parqetSym = s.endsWith('.NS') ? s : (s.endsWith('.BO') ? s.replace('.BO', '.NS') : (isUS ? cleanKey : cleanKey + '.NS'));
+
+    // Check if we have a direct logo in stockData
+    const dataEntry = (typeof stockData !== 'undefined' && (stockData[cleanKey] || stockData[s])) || {};
+    const primarySrc = dataEntry.logo || `https://assets.parqet.com/logos/symbol/${parqetSym}`;
+    const domain = dataEntry.domain || '';
+
+    const uid = 'lgs_' + Math.random().toString(36).slice(2, 9);
+    const fbId = 'fbs_' + uid;
+
+    // Deterministic pastel gradient avatar generator
+    const text = (name || cleanKey || '??').trim();
+    const initials = text.split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || cleanKey.slice(0, 2);
+    const gradients = [
+        'linear-gradient(135deg, #6366f1, #8b5cf6)',
+        'linear-gradient(135deg, #3b82f6, #06b6d4)',
+        'linear-gradient(135deg, #059669, #10b981)',
+        'linear-gradient(135deg, #f59e0b, #ef4444)',
+        'linear-gradient(135deg, #ec4899, #8b5cf6)',
+        'linear-gradient(135deg, #14b8a6, #0284c7)',
+        'linear-gradient(135deg, #8b5cf6, #d946ef)'
+    ];
+    let hash = 0;
+    for (let i = 0; i < cleanKey.length; i++) { hash = cleanKey.charCodeAt(i) + ((hash << 5) - hash); }
+    const grad = gradients[Math.abs(hash) % gradients.length];
+    const fbAvatar = `<div style="width:100%;height:100%;border-radius:${r};background:${grad};color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:calc(${sz} * 0.40);box-shadow:0 1px 3px rgba(0,0,0,0.1);letter-spacing:0.5px;">${initials}</div>`;
+
+    const gFavicon = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=128` : null;
+    const ddgFavicon = domain ? `https://icons.duckduckgo.com/ip3/${domain}.ico` : null;
+
+    let errHandler = ``;
+    if (gFavicon) {
+        if (ddgFavicon) {
+            errHandler = `this.onerror=function(){this.onerror=function(){this.style.display='none';var fb=document.getElementById('${fbId}');if(fb)fb.style.display='flex';};this.src='${ddgFavicon}';};this.src='${gFavicon}';`;
+        } else {
+            errHandler = `this.onerror=function(){this.style.display='none';var fb=document.getElementById('${fbId}');if(fb)fb.style.display='flex';};this.src='${gFavicon}';`;
+        }
+    } else {
+        errHandler = `this.style.display='none';var fb=document.getElementById('${fbId}');if(fb)fb.style.display='flex';`;
+    }
+
+    return `<div class="stock-squircle-wrap" style="position:relative;width:${sz};height:${sz};flex-shrink:0;display:inline-block;vertical-align:middle;">
+        <img src="${primarySrc}" id="${uid}" alt="${cleanKey}" loading="lazy"
+             style="width:${sz};height:${sz};border-radius:${r};object-fit:contain;background:#ffffff;border:1px solid #e2e8f0;padding:3px;display:block;box-shadow:0 1px 4px rgba(0,0,0,0.06);"
+             onerror="${errHandler}">
+        <div id="${fbId}" style="display:none;position:absolute;inset:0;">
+            ${fbAvatar}
+        </div>
+    </div>`;
+};
+
 function getStockLogo(sym){
     const s=sym.replace('.NS','').replace('.BO','').trim().toUpperCase();
     return (stockData[s]&&stockData[s].logo)?stockData[s].logo:'';
@@ -1738,8 +1802,17 @@ function fetchTopGainers(){
         c.innerHTML='<div class="widget-list">'+data.map(item=>{
             const p=parseFloat(item.price).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
             return `<div class="widget-item" onclick="showForm('stock');setTimeout(()=>$('#stockName').val('${item.symbol}'),100);">
-                <div class="widget-item-left"><div class="widget-sym">${item.symbol}</div><div class="widget-price">&#8377;${p}</div></div>
-                <div class="widget-item-right"><div class="widget-pct">+${parseFloat(item.pChange).toFixed(2)}%</div><div class="widget-change">+${parseFloat(item.change).toFixed(2)}</div></div>
+                <div class="widget-item-left" style="display:flex;flex-direction:row;align-items:center;gap:10px;flex:1;min-width:0;">
+                    ${window.renderStockSquircle(item.symbol, item.symbol, '32px', '8px')}
+                    <div class="widget-info" style="display:flex;flex-direction:column;gap:2px;min-width:0;text-align:left;">
+                        <div class="widget-sym" style="font-size:0.83rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.symbol}</div>
+                        <div class="widget-price" style="font-family:'JetBrains Mono',monospace;font-size:0.76rem;color:var(--muted);white-space:nowrap;">&#8377;${p}</div>
+                    </div>
+                </div>
+                <div class="widget-item-right" style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0;text-align:right;">
+                    <div class="widget-pct" style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;font-weight:700;color:var(--green);white-space:nowrap;">+${parseFloat(item.pChange).toFixed(2)}%</div>
+                    <div class="widget-change" style="font-family:'JetBrains Mono',monospace;font-size:0.70rem;color:var(--muted-light);white-space:nowrap;">+${parseFloat(item.change).toFixed(2)}</div>
+                </div>
             </div>`;
         }).join('')+'</div>';
     }).catch(()=>{c.innerHTML='<div class="widget-placeholder"><i class="fas fa-exclamation-triangle"></i><p>Error</p></div>';});
@@ -1751,8 +1824,17 @@ function fetchTopLosers(){
         c.innerHTML='<div class="widget-list">'+data.map(item=>{
             const p=parseFloat(item.price).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
             return `<div class="widget-item" onclick="showForm('stock');setTimeout(()=>$('#stockName').val('${item.symbol}'),100);">
-                <div class="widget-item-left"><div class="widget-sym">${item.symbol}</div><div class="widget-price">&#8377;${p}</div></div>
-                <div class="widget-item-right"><div class="widget-pct" style="color:#dc2626;">${parseFloat(item.pChange).toFixed(2)}%</div><div class="widget-change" style="color:#dc2626;">${parseFloat(item.change).toFixed(2)}</div></div>
+                <div class="widget-item-left" style="display:flex;flex-direction:row;align-items:center;gap:10px;flex:1;min-width:0;">
+                    ${window.renderStockSquircle(item.symbol, item.symbol, '32px', '8px')}
+                    <div class="widget-info" style="display:flex;flex-direction:column;gap:2px;min-width:0;text-align:left;">
+                        <div class="widget-sym" style="font-size:0.83rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.symbol}</div>
+                        <div class="widget-price" style="font-family:'JetBrains Mono',monospace;font-size:0.76rem;color:var(--muted);white-space:nowrap;">&#8377;${p}</div>
+                    </div>
+                </div>
+                <div class="widget-item-right" style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0;text-align:right;">
+                    <div class="widget-pct" style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;font-weight:700;color:#dc2626;white-space:nowrap;">${parseFloat(item.pChange).toFixed(2)}%</div>
+                    <div class="widget-change" style="font-family:'JetBrains Mono',monospace;font-size:0.70rem;color:#dc2626;white-space:nowrap;">${parseFloat(item.change).toFixed(2)}</div>
+                </div>
             </div>`;
         }).join('')+'</div>';
     }).catch(()=>{c.innerHTML='<div class="widget-placeholder"><i class="fas fa-exclamation-triangle"></i><p>Error</p></div>';});
@@ -1765,8 +1847,17 @@ function fetchTopVolume(){
             const p=parseFloat(item.price).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
             const vol=item.volume?(item.volume/1e5).toFixed(2)+'L':'—';
             return `<div class="widget-item" onclick="showForm('stock');setTimeout(()=>$('#stockName').val('${item.symbol}'),100);">
-                <div class="widget-item-left"><div class="widget-sym">${item.symbol}</div><div class="widget-price">&#8377;${p}</div></div>
-                <div class="widget-item-right"><div class="widget-pct" style="color:#2563eb;">${vol}</div><div class="widget-change">volume</div></div>
+                <div class="widget-item-left" style="display:flex;flex-direction:row;align-items:center;gap:10px;flex:1;min-width:0;">
+                    ${window.renderStockSquircle(item.symbol, item.symbol, '32px', '8px')}
+                    <div class="widget-info" style="display:flex;flex-direction:column;gap:2px;min-width:0;text-align:left;">
+                        <div class="widget-sym" style="font-size:0.83rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.symbol}</div>
+                        <div class="widget-price" style="font-family:'JetBrains Mono',monospace;font-size:0.76rem;color:var(--muted);white-space:nowrap;">&#8377;${p}</div>
+                    </div>
+                </div>
+                <div class="widget-item-right" style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0;text-align:right;">
+                    <div class="widget-pct" style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;font-weight:700;color:#2563eb;white-space:nowrap;">${vol}</div>
+                    <div class="widget-change" style="font-size:0.70rem;color:var(--muted-light);white-space:nowrap;">volume</div>
+                </div>
             </div>`;
         }).join('')+'</div>';
     }).catch(()=>{c.innerHTML='<div class="widget-placeholder"><i class="fas fa-exclamation-triangle"></i><p>Error</p></div>';});
@@ -1779,8 +1870,17 @@ function fetchTopTurnover(){
             const p=parseFloat(item.price).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
             const to=item.turnover?'&#8377;'+(item.turnover/1e7).toFixed(2)+'Cr':'—';
             return `<div class="widget-item" onclick="showForm('stock');setTimeout(()=>$('#stockName').val('${item.symbol}'),100);">
-                <div class="widget-item-left"><div class="widget-sym">${item.symbol}</div><div class="widget-price">&#8377;${p}</div></div>
-                <div class="widget-item-right"><div class="widget-pct" style="color:#d97706;">${to}</div><div class="widget-change">value</div></div>
+                <div class="widget-item-left" style="display:flex;flex-direction:row;align-items:center;gap:10px;flex:1;min-width:0;">
+                    ${window.renderStockSquircle(item.symbol, item.symbol, '32px', '8px')}
+                    <div class="widget-info" style="display:flex;flex-direction:column;gap:2px;min-width:0;text-align:left;">
+                        <div class="widget-sym" style="font-size:0.83rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.symbol}</div>
+                        <div class="widget-price" style="font-family:'JetBrains Mono',monospace;font-size:0.76rem;color:var(--muted);white-space:nowrap;">&#8377;${p}</div>
+                    </div>
+                </div>
+                <div class="widget-item-right" style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0;text-align:right;">
+                    <div class="widget-pct" style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;font-weight:700;color:#d97706;white-space:nowrap;">${to}</div>
+                    <div class="widget-change" style="font-size:0.70rem;color:var(--muted-light);white-space:nowrap;">value</div>
+                </div>
             </div>`;
         }).join('')+'</div>';
     }).catch(()=>{c.innerHTML='<div class="widget-placeholder"><i class="fas fa-exclamation-triangle"></i><p>Error</p></div>';});
@@ -1808,10 +1908,11 @@ function refreshMarketWidgets(){ fetchTopGainers();fetchTopLosers();fetchTopVolu
     $('#stockDashboardPanel').hide();
     $('#portfolioPanel').hide();
     $('#watchlistPanel').hide();
+    $('#researchStudioPanel').hide();
     if(typeof StockDashboard !== 'undefined') StockDashboard.stopAutoRefresh();
     if(typeof FinTracker !== 'undefined'){ FinTracker.stopPortfolioRefresh(); FinTracker.stopWatchlistRefresh(); }
     $('.menu-btn').removeClass('active');
-    
+
     // Highlight active sidebar item
     document.querySelectorAll('.sb-item').forEach(function(b){
         b.classList.remove('active');
@@ -1824,9 +1925,14 @@ function refreshMarketWidgets(){ fetchTopGainers();fetchTopLosers();fetchTopVolu
     if(formType==='chat'){
         $('#messageFormeight').css({display:'flex',flexDirection:'column'});
         $('#chatFooter').show();
+    } else if(formType==='research_studio'){
+        $('#researchStudioPanel').css('display','flex');
+        if(typeof ResearchStudio !== 'undefined') {
+            ResearchStudio.init();
+        }
     } else if(formType==='stock'){
-        $('#formsContainer').show(); 
-        $('#stockForm').show(); 
+        $('#formsContainer').show();
+        $('#stockForm').show();
         $('#chatFooter').hide();
     } else if(formType==='news'){
         $('#newsPanel').show();
@@ -1851,7 +1957,7 @@ function refreshMarketWidgets(){ fetchTopGainers();fetchTopLosers();fetchTopVolu
         $('#watchlistPanel').css('display','flex');
         if(typeof FinTracker !== 'undefined') FinTracker.startWatchlistRefresh();
     } else {
-        $('#formsContainer').show(); 
+        $('#formsContainer').show();
         $('#'+formType+'Form').show();
     }
 }
@@ -1870,6 +1976,7 @@ function goHome(){
     $('#stockDashboardPanel').hide();
     $('#portfolioPanel').hide();
     $('#watchlistPanel').hide();
+    $('#researchStudioPanel').hide();
     if(typeof StockDashboard !== 'undefined') StockDashboard.stopAutoRefresh();
     if(typeof FinTracker !== 'undefined'){ FinTracker.stopPortfolioRefresh(); FinTracker.stopWatchlistRefresh(); }
     $('#welcomeScreen').show();
@@ -2549,17 +2656,29 @@ $(document).ready(function(){
         if(scored.length > 0){
             const html = scored.map(({s}) => {
                 const badge = s.i ? `<span class="d-index">${s.i}</span>` : '';
-                return `<div class="dropdown-item" data-ticker="${s.v}">
-                    <span class="d-name">${s.l}</span>
-                    <span class="d-code">${s.v}</span>
-                    ${badge}
+                const logoHtml = window.renderStockSquircle ? window.renderStockSquircle(s.v, s.l, '28px', '7px') : '';
+                return `<div class="dropdown-item" data-ticker="${s.v}" style="display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;">
+                    ${logoHtml}
+                    <div style="flex:1;min-width:0;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                            <span class="d-name" style="font-size:13px;font-weight:600;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.l}</span>
+                            <span class="d-code" style="font-size:11px;font-weight:700;color:#2563eb;background:#eff6ff;padding:2px 7px;border-radius:12px;white-space:nowrap;">${s.v}</span>
+                        </div>
+                        ${badge}
+                    </div>
                 </div>`;
             }).join('');
             $dropdown.html(html).show();
         } else {
-            $dropdown.html(`<div class="dropdown-item" data-ticker="${val.toUpperCase()}">
-                <span class="d-name" style="color:#64748b;font-style:italic;">Search for "${val.toUpperCase()}.NS" on NSE</span>
-                <span class="d-code">${val.toUpperCase()}</span>
+            const logoHtml = window.renderStockSquircle ? window.renderStockSquircle(val.toUpperCase(), val.toUpperCase(), '28px', '7px') : '';
+            $dropdown.html(`<div class="dropdown-item" data-ticker="${val.toUpperCase()}" style="display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;">
+                ${logoHtml}
+                <div style="flex:1;min-width:0;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                        <span class="d-name" style="color:#64748b;font-style:italic;">Search for "${val.toUpperCase()}.NS" on NSE</span>
+                        <span class="d-code" style="font-size:11px;font-weight:700;color:#2563eb;background:#eff6ff;padding:2px 7px;border-radius:12px;">${val.toUpperCase()}</span>
+                    </div>
+                </div>
             </div>`).show();
         }
     });
@@ -3444,7 +3563,23 @@ function submitZakat() {
         });
 }
 
+// ── App Scope Configuration: 100% Production ──
+function getReviewMode() {
+    return 'full';
+}
+function updateReviewModeUI() {}
+function cycleReviewMode() {}
+function setReviewModeExplicit() {}
+function showMilestoneModal() {}
+function closeMilestoneModal() {}
+
+$(document).ready(function(){
+    localStorage.setItem('finassist_review_mode', 'full');
+});
+
 </script>
+
+<script src="{{ url_for('static', filename='stock_insights.js') }}"></script>
 <script src="{{ url_for('static', filename='stock_dashboard.js') }}"></script>
 <script src="{{ url_for('static', filename='portfolio_watchlist.js') }}"></script>
 

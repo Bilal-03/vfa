@@ -1,0 +1,7 @@
+market,symbol,date,stock_return,market_return,adjusted_score,raw_score,adjusted_alert,annotation,news_cause,magnitude
+US,MSFT,2025-12-10,-0.0273566257816678,0.0067495569392015,-4.374070069030341,-2.95897707272358,True,Calculated returns independently checked; no causal or anomaly ground truth claimed,Not inferred,4.374070069030341
+India,SBIN.NS,2026-02-11,0.0339131435019033,0.0007209990483325,2.9966394922386685,2.943436838978504,False,Calculated returns independently checked; no causal or anomaly ground truth claimed,Not inferred,2.9966394922386685
+India,TCS.NS,2026-02-11,-0.0250620018490097,0.0007209990483325,-2.864897077979584,-2.089275350589721,False,Calculated returns independently checked; no causal or anomaly ground truth claimed,Not inferred,2.864897077979584
+US,AAPL,2026-07-15,0.0401448637922199,0.0038191443583879,2.526903595658564,2.601298068554201,False,Calculated returns independently checked; no causal or anomaly ground truth claimed,Not inferred,2.526903595658564
+India,INFY.NS,2026-05-19,0.0476149256439086,-0.0013509212410769,2.5081853148078217,2.6240863802519594,False,Calculated returns independently checked; no causal or anomaly ground truth claimed,Not inferred,2.5081853148078217
+US,NVDA,2025-11-10,0.0579325780475237,0.0154010186217099,2.131522225259704,3.5639204021550555,False,Calculated returns independently checked; no causal or anomaly ground truth claimed,Not inferred,2.131522225259704

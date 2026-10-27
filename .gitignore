@@ -69,3 +69,24 @@ ehthumbs.db
 Thumbs.db
 desktop.ini
 .env
+
+.venv_research/
+research/data/
+research/artifacts/*.pt
+research/sentiment_cache.json
+
+research/sentiment_cache.json.lock
+
+# Provider price snapshots are local evaluation inputs, not redistributable datasets.
+insights/data/
+
+# Local tooling, generated reviews, and private databases
+.venv_tools/
+.venv_release/
+.chart-data-*/
+.codex-*/
+tmp/
+*.sqlite3
+*.sqlite3-*
+*.db
+!.env.example

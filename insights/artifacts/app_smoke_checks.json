@@ -1,0 +1,32 @@
+[
+  {
+    "path": "/si/candle?symbol=AAPL&timeframe=3M",
+    "http_status": 200,
+    "candles": 65,
+    "insight_script_present": null
+  },
+  {
+    "path": "/si/candle?symbol=TCS.NS&timeframe=3M",
+    "http_status": 200,
+    "candles": 63,
+    "insight_script_present": null
+  },
+  {
+    "path": "/health",
+    "http_status": 200,
+    "candles": null,
+    "insight_script_present": null
+  },
+  {
+    "path": "/?view=mobile",
+    "http_status": 200,
+    "candles": null,
+    "insight_script_present": true
+  },
+  {
+    "path": "/?view=desktop",
+    "http_status": 200,
+    "candles": null,
+    "insight_script_present": true
+  }
+]

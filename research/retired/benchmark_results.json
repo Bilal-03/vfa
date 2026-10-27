@@ -1,0 +1,60 @@
+{
+  "timestamp": "2026-09-21 15:23:34",
+  "test_samples_evaluated": 450,
+  "equities_evaluated": [
+    "RELIANCE.NS",
+    "TCS.NS",
+    "AAPL",
+    "NVDA"
+  ],
+  "ablation_table": [
+    {
+      "Model": "Baseline 1: Random Walk / ARIMA",
+      "Architecture": "Statistical Baseline",
+      "Accuracy (%)": 35.33,
+      "Macro F1": 0.336,
+      "Precision": 0.337,
+      "Recall": 0.337,
+      "MCC": 0.004,
+      "Ann. Return (%)": -63.3,
+      "Sharpe Ratio": -0.48,
+      "Max DD (%)": -90.42
+    },
+    {
+      "Model": "Baseline 2: Technical-Only BiLSTM",
+      "Architecture": "Temporal Sequence DL",
+      "Accuracy (%)": 41.33,
+      "Macro F1": 0.323,
+      "Precision": 0.375,
+      "Recall": 0.352,
+      "MCC": 0.034,
+      "Ann. Return (%)": 76.05,
+      "Sharpe Ratio": 0.93,
+      "Max DD (%)": -19.3
+    },
+    {
+      "Model": "Baseline 3: Sentiment-Only FinBERT",
+      "Architecture": "NLP Transformer Only",
+      "Accuracy (%)": 76.67,
+      "Macro F1": 0.623,
+      "Precision": 0.647,
+      "Recall": 0.657,
+      "MCC": 0.637,
+      "Ann. Return (%)": 220.86,
+      "Sharpe Ratio": 1.69,
+      "Max DD (%)": -46.79
+    },
+    {
+      "Model": "Proposed: Cross-Modal Attention Network",
+      "Architecture": "Multimodal Fusion (FinAssist)",
+      "Accuracy (%)": 77.11,
+      "Macro F1": 0.615,
+      "Precision": 0.677,
+      "Recall": 0.657,
+      "MCC": 0.649,
+      "Ann. Return (%)": 217.93,
+      "Sharpe Ratio": 1.68,
+      "Max DD (%)": -46.79
+    }
+  ]
+}

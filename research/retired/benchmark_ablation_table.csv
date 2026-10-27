@@ -1,0 +1,5 @@
+Model,Architecture,Accuracy (%),Macro F1,Precision,Recall,MCC,Ann. Return (%),Sharpe Ratio,Max DD (%)
+Baseline 1: Random Walk / ARIMA,Statistical Baseline,35.33,0.336,0.337,0.337,0.004,-63.3,-0.48,-90.42
+Baseline 2: Technical-Only BiLSTM,Temporal Sequence DL,41.33,0.323,0.375,0.352,0.034,76.05,0.93,-19.3
+Baseline 3: Sentiment-Only FinBERT,NLP Transformer Only,76.67,0.623,0.647,0.657,0.637,220.86,1.69,-46.79
+Proposed: Cross-Modal Attention Network,Multimodal Fusion (FinAssist),77.11,0.615,0.677,0.657,0.649,217.93,1.68,-46.79

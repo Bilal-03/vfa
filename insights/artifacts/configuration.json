@@ -1,0 +1,38 @@
+{
+  "version": "stock-insights-1.0",
+  "parameters": {
+    "regression_sessions": 120,
+    "residual_sessions": 60,
+    "alert_threshold": 3.5,
+    "volume_sessions": 20,
+    "portfolio_min_returns": 120,
+    "annual_sessions": 252,
+    "minimum_windows": 30,
+    "horizons": {
+      "1": 21,
+      "3": 63,
+      "6": 126,
+      "12": 252
+    }
+  },
+  "seed": 42,
+  "evaluation_fraction": 0.2,
+  "portfolio_training": "expanding prior observations; minimum 120",
+  "portfolio_future_sessions": 21,
+  "portfolio_origin_step": 21,
+  "portfolio_weights": {
+    "before": [
+      0.5,
+      0.5,
+      0
+    ],
+    "after": [
+      0.3333333333333333,
+      0.3333333333333333,
+      0.3333333333333333
+    ]
+  },
+  "movement_evaluation_step": 21,
+  "injected_return_deviation": 0.08,
+  "universe_policy": "Fixed six-symbol universe from the approved plan; not selected by outcomes."
+}

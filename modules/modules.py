@@ -109,7 +109,9 @@ class Chatterbot:
     def _calculate_emi(self, principal, annual_rate, years):
         monthly_rate = annual_rate / 12 / 100
         months = years * 12
-        monthly = (principal * monthly_rate) / (1 - (1 + monthly_rate) ** -months)
+        if months <= 0 or annual_rate < 0 or principal < 0:
+            raise ValueError('Principal and rate must be nonnegative; tenure must be positive.')
+        monthly = principal / months if monthly_rate == 0 else (principal * monthly_rate) / (1 - (1 + monthly_rate) ** -months)
         total = monthly * months
         interest = total - principal
         return monthly, total, interest
@@ -214,7 +216,7 @@ class FDCalculatorBot:
                 total_interest = principal * rate * years
                 maturity = principal + total_interest
             else:
-                maturity = principal * (1 + rate) ** years
+                maturity = principal * (1 + rate / 4) ** (4 * years)
         return round(maturity, 2)
 
     def _extract_fd_details(self, text):

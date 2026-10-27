@@ -1,22 +1,38 @@
+# Documents the existing finassist service; do not create a second service.
 services:
   - type: web
-    name: vfa
+    name: finassist
     runtime: python
+    repo: https://github.com/Bilal-03/vfa
+    branch: main
+    region: oregon
+    plan: free
+    autoDeployTrigger: commit
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120
+    healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.0
-      # NSE India API is geo-blocked on Render's US servers.
-      # Setting SKIP_NSE=true bypasses NSE calls and uses Twelve Data + yfinance directly.
-      # This eliminates wasted HTTP timeouts and prevents fallback to 50-symbol Yahoo loops.
+        value: 3.11.18
+      - key: FLASK_ENV
+        value: production
+      - key: PORTFOLIO_STORAGE
+        value: supabase
       - key: SKIP_NSE
         value: "true"
-      # Groq free-tier model. Override this in the Render dashboard if needed.
       - key: GROQ_MODEL
         value: openai/gpt-oss-20b
-      # Twelve Data free API (800 req/day). Used as primary quote source to reduce
-      # yfinance/Yahoo Finance load (which throttles by IP on shared Render servers).
-      # Set this in Render dashboard → Environment → TWELVE_DATA_KEY
-      # - key: TWELVE_DATA_KEY
-      #   value: "your_key_here"
+      - key: STOCK_INSIGHTS_AS_OF
+        value: ""
+      - key: STOCK_INSIGHTS_SNAPSHOT_DIR
+        value: ""
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: FLASK_SECRET_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: TWELVE_DATA_KEY
+        sync: false

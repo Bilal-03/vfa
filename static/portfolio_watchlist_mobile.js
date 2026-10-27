@@ -15,6 +15,7 @@ const FinTracker = (() => {
     let _username = LS.get('username') || null;  // null = not identified yet
     let _portfolioCache = [];                     // in-memory cache for fast renders
 
+    const localStorageMode = document.documentElement.dataset.portfolioStorage === 'sqlite';
     const getUsername = () => _username;
 
     // ── Symbol resolver ───────────────────────────────────────────────────────
@@ -105,13 +106,22 @@ const FinTracker = (() => {
     }
 
     // ── Logo ──────────────────────────────────────────────────────────────────
-    function mkLogo(name, logo, sz='36px', r='10px') {
-        const init=(name||'??').split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    function mkLogo(name, logo, sz='36px', r='10px', sym='') {
+        if (typeof window.renderStockSquircle === 'function') {
+            return window.renderStockSquircle(sym || name, name, sz, r);
+        }
+        const s = (sym || name || '').toUpperCase().trim();
+        const clean = s.replace('.NS','').replace('.BO','');
+        const isUS = ['AAPL','MSFT','GOOGL','GOOG','AMZN','META','TSLA','NVDA','NFLX','AMD','INTC','JPM','BAC','V','MA','WMT','DIS'].includes(clean);
+        const parqetSym = s.endsWith('.NS') ? s : (isUS ? clean : clean + '.NS');
+        const src = logo || `https://assets.parqet.com/logos/symbol/${parqetSym}`;
+        const init = (name||clean||'??').split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
         const id='i'+Math.random().toString(36).slice(2,8), fb='f'+Math.random().toString(36).slice(2,8);
-        if(logo) return `<img src="${logo}" id="${id}" style="width:${sz};height:${sz};border-radius:${r};object-fit:contain;background:#fff;border:1px solid #e2e8f0;padding:4px;display:block;"
-            onerror="var e=document.getElementById('${id}'),f=document.getElementById('${fb}');if(e)e.style.display='none';if(f)f.style.display='flex';">
-            <div id="${fb}" class="pt-logo-fb" style="width:${sz};height:${sz};border-radius:${r};display:none;">${init}</div>`;
-        return `<div class="pt-logo-fb" style="width:${sz};height:${sz};border-radius:${r};">${init}</div>`;
+        return `<div style="position:relative;width:${sz};height:${sz};">
+            <img src="${src}" id="${id}" style="width:${sz};height:${sz};border-radius:${r};object-fit:contain;background:#fff;border:1px solid #e2e8f0;padding:3px;display:block;box-shadow:0 1px 4px rgba(0,0,0,0.05);"
+                onerror="var e=document.getElementById('${id}'),f=document.getElementById('${fb}');if(e)e.style.display='none';if(f)f.style.display='flex';">
+            <div id="${fb}" class="pt-logo-fb" style="width:${sz};height:${sz};border-radius:${r};background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-weight:800;display:none;align-items:center;justify-content:center;font-size:calc(${sz}*0.42);">${init}</div>
+        </div>`;
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -138,8 +148,8 @@ const FinTracker = (() => {
                     <div class="pt-identity-feat">
                         <div class="pt-feat-icon" style="background:#eff6ff;color:#2563eb;"><i class="fas fa-sync-alt"></i></div>
                         <div class="pt-feat-text">
-                            <div class="pt-feat-title">Sync Across Devices</div>
-                            <div class="pt-feat-sub">Access your portfolio anywhere</div>
+                            <div class="pt-feat-title">${localStorageMode ? 'Saved on this laptop' : 'Sync Across Devices'}</div>
+                            <div class="pt-feat-sub">${localStorageMode ? 'Reopen holdings here with your username' : 'Access your portfolio anywhere'}</div>
                         </div>
                     </div>
                     <div class="pt-identity-feat">
@@ -393,7 +403,7 @@ const FinTracker = (() => {
             const pnlCls = pnl!=null ? cls(pnl) : '';
             return `<div class="pt-holding-card">
                 <div class="pt-holding-top">
-                    <div class="pt-holding-logo-wrap">${mkLogo(name,p?.logo,'42px','12px')}</div>
+                    <div class="pt-holding-logo-wrap">${mkLogo(name,p?.logo,'42px','12px',h.symbol)}</div>
                     <div class="pt-holding-info">
                         <div class="pt-holding-sym">${display(h.symbol)}</div>
                         <div class="pt-holding-name">${name}</div>

@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from modules.modules import Chatterbot, FDCalculatorBot, SipChatterbot
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_file
 import yfinance as yf
 import requests
 import re
@@ -29,11 +29,27 @@ def _supa() -> Client:
         raise RuntimeError("SUPABASE_URL and SUPABASE_KEY must be set in .env")
     return create_client(_SUPABASE_URL, _SUPABASE_KEY)
 app = Flask(__name__)
+APP_COMMIT = os.environ.get('RENDER_GIT_COMMIT') or os.environ.get('APP_COMMIT', 'local')
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "fallback-dev-key")
+app.config['TEMPLATES_AUTO_RELOAD'] = True
+app.config['PORTFOLIO_STORAGE'] = os.environ.get('PORTFOLIO_STORAGE', 'supabase').lower()
+from local_portfolio import configure as configure_local_portfolio
+configure_local_portfolio(app)
 
 @app.route('/health')
 def health():
     return 'ok', 200
+
+@app.route('/api/version')
+def version():
+    response = jsonify(commit=APP_COMMIT)
+    response.headers['Cache-Control'] = 'no-store'
+    return response
+
+@app.url_defaults
+def version_static_assets(endpoint, values):
+    if endpoint == 'static':
+        values['v'] = APP_COMMIT
 
 @app.route('/favicon.ico')
 def favicon():
@@ -152,6 +168,8 @@ def portfolio_sync():
 @app.route('/api/portfolio/debug')
 def portfolio_debug():
     """Debug: show raw Supabase data for a username (no auth — remove in prod)."""
+    if os.environ.get('FLASK_ENV') == 'production' or os.environ.get('RENDER') == 'true':
+        return jsonify({'error': 'Not found'}), 404
     username = (request.args.get('username') or '').strip()
     if not username:
         return jsonify({'error': 'Pass ?username=YourName'}), 400
@@ -500,9 +518,9 @@ def _is_mobile(request):
 
 @app.route("/")
 def index():
-    if _is_mobile(request):
-        return render_template('chat_mobile.html')
-    return render_template('chat_enhanced.html')
+    view = request.args.get('view')
+    template = 'chat_mobile.html' if view == 'mobile' or (view != 'desktop' and _is_mobile(request)) else 'chat_enhanced.html'
+    return render_template(template, portfolio_storage=app.config['PORTFOLIO_STORAGE'])
 
 @app.route("/get_stock", methods=["POST"])
 def get_stock_endpoint():
@@ -800,6 +818,63 @@ def mf_detail(scheme_code):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# ── Deep Learning Forecasting & Academic Benchmark API ────────────────────────
+from engine import get_forecast_for_symbol, get_benchmark_results, simulate_forecast_whatif
+
+@app.route('/api/forecast/<path:symbol>')
+def api_forecast(symbol):
+    """Returns an artifact-backed daily forecast and input-removal sensitivity."""
+    try:
+        resolved = resolve_ticker(symbol)
+        if isinstance(resolved, str) and resolved.startswith("__UNKNOWN__"):
+            resolved = resolved.replace("__UNKNOWN__", "")
+        forecast_data = get_forecast_for_symbol(resolved)
+        return jsonify(forecast_data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/forecast/benchmark')
+def api_forecast_benchmark():
+    """Returns empirical academic ablation benchmark metrics for faculty review."""
+    try:
+        return jsonify(get_benchmark_results())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/forecast/simulate', methods=['POST'])
+def api_forecast_simulate():
+    """Executes real-time What-If sensitivity simulation modulating sentiment & time decay."""
+    try:
+        data = request.get_json(silent=True) or {}
+        symbol = data.get('symbol', 'RELIANCE')
+        polarity = float(data.get('polarity', 0.0))
+        age_hours = float(data.get('age_hours', 2.0))
+
+        resolved = resolve_ticker(symbol)
+        if isinstance(resolved, str) and resolved.startswith("__UNKNOWN__"):
+            resolved = resolved.replace("__UNKNOWN__", "")
+
+        result = simulate_forecast_whatif(resolved, simulated_polarity=polarity, headline_age_hours=age_hours)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ── Academic Deliverables Direct Download Endpoints ────────────────────────────
+@app.route('/download/paper')
+def download_paper():
+    return jsonify({"status":"retired","error":"Legacy academic artifact withdrawn: unsupported experimental claims. See research documentation."}), 410
+
+
+@app.route('/download/rebuttal')
+def download_rebuttal():
+    return jsonify({"status":"retired","error":"Legacy academic artifact withdrawn: unsupported experimental claims. See research documentation."}), 410
+
+
+@app.route('/download/presentation')
+def download_presentation():
+    return jsonify({"status":"retired","error":"Legacy academic artifact withdrawn: unsupported experimental claims. See research documentation."}), 410
+
+
 # ── Groq AI Integration ───────────────────────────────────────────────────────
 import re as _re
 from groq import Groq as GroqClient
@@ -813,12 +888,12 @@ _GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b").strip() or "ope
 _groq_client = None
 
 GROQ_SYSTEM_PROMPT = (
-    "You are FinAssist, a smart Virtual Finance Assistant for Indian AND US markets. "
-    "You specialise in NSE/BSE Indian stocks, US stocks (NYSE/NASDAQ), personal finance, "
-    "mutual funds, banking, taxes, SIP, EMI, FD, and general economics. "
-    "CRITICAL FORMATTING: Use <br> for line breaks, <strong> for bold, bullet points with •. "
-    "NEVER use markdown (no **, ##, backticks). Use emojis for section headings. Be concise."
+    "You are FinAssist, a financial education assistant. Cite only supplied observed data and recorded research results. "
+    "Respect unavailable/out_of_scope statuses. Model probabilities are uncalibrated, not confidence or guarantees. "
+    "News-removal sensitivity is not causal attribution. Do not claim architectural novelty, benchmark improvements, "
+    "or trading performance without evidence. Format using <br> and <strong>; be concise."
 )
+
 
 
 def _get_groq_client():
@@ -892,25 +967,74 @@ def _stock_context_for_ai(query):
     return ""
 
 
+def _forecast_context_for_ai(query):
+    for name, symbol in sorted(STOCK_TICKERS.items(), key=lambda pair: -len(pair[0])):
+        if name in query.lower():
+            return "Observed research service output (respect status and probability limitations): " + json.dumps(get_forecast_for_symbol(symbol))
+    return "Forecast unavailable: please specify a supported stock."
+
+
 def process_user_input(user_input):
+    if request.form.get('insight_kind'):
+        import insights_service
+        try:
+            return insights_service.chat_request(request.form)
+        except (ValueError, TypeError, OverflowError):
+            return 'Please check the stock insight inputs and try again.'
     print(f"🔥 User Input: {user_input}")
     try:
         u = user_input.lower().strip()
+        forecast_ctx = ""
         stock_ctx = ""
+
+        # Check for predictive/forecast intent
+        is_forecast_query = any(w in u for w in [
+            'predict', 'forecast', 'outlook', 'trend', 'future', 'projection',
+            'should i buy', 'should i sell', 'target', 'bullish or bearish',
+            'will it go up', 'will it fall', 'prediction', 'xai', 'research model'
+        ])
+
+        # Check for model architecture / academic novelty inquiries
+        is_architecture_query = any(w in u for w in [
+            'how do you predict', 'what model', 'base paper', 'architecture', 'novelty',
+            'bilstm', 'finbert', 'cross-modal', 'ablation', 'how does prediction work',
+            'research paper', 'unique about finassist'
+        ])
+
+        if is_architecture_query:
+            return ("<strong>FinAssist Stock Insights</strong><br>"
+                    "Portfolio Fit measures how an additional purchase changes concentration, sector exposure and historical risk. "
+                    "Unusual Movement compares a completed stock session with the wider market using a causal rolling regression and robust statistics. "
+                    "Historical Experience translates actual rolling investment outcomes into money.<br>"
+                    "These are explainable statistical analyses, not stock-price predictions or a newly invented financial algorithm. "
+                    "Open Stock Information and use Ask FinAssist to explain for the same calculated facts shown in the card.")
+
         has_stock_keyword = (
             any(w in u for w in ['price', 'stock', 'share', 'weekly', 'week',
                                   'today', 'current price', 'nse', 'bse', 'nasdaq', 'nyse'])
             or any(s in u for s in STOCK_TICKERS)
         )
-        if has_stock_keyword:
-            stock_ctx = _stock_context_for_ai(user_input)
 
-        if stock_ctx:
+        if is_forecast_query and has_stock_keyword:
+            return ("FinAssist's Stock Insight card explains portfolio impact, unusual completed-session movements and historical outcomes. "
+                    "It does not forecast future prices or issue buy/sell recommendations. Open Stock Information to explore a stock.")
+
+        if forecast_ctx:
             prompt = (
-                "LIVE MARKET DATA (fetched right now): " + stock_ctx + "\n\n"
+                forecast_ctx + "\n\n"
                 "User question: " + user_input + "\n"
-                "Present data in a clear structured format. Use $ for US stocks, Rs. for Indian stocks."
+                "Present only the supplied status, horizon, uncalibrated probabilities and input-removal sensitivity. Never describe sensitivity as causal attribution."
             )
+        elif has_stock_keyword:
+            stock_ctx = _stock_context_for_ai(user_input)
+            if stock_ctx:
+                prompt = (
+                    "LIVE MARKET DATA (fetched right now): " + stock_ctx + "\n\n"
+                    "User question: " + user_input + "\n"
+                    "Present data in a clear structured format. Use $ for US stocks, Rs. for Indian stocks."
+                )
+            else:
+                prompt = user_input
         else:
             prompt = user_input
 
@@ -922,4 +1046,14 @@ def process_user_input(user_input):
         return error_msg
 
 if __name__ == "__main__":
-    app.run(debug=False)
+    port = int(os.environ.get("PORT", 5000))
+    host = os.environ.get("HOST", "127.0.0.1")
+    print(f"\n🚀 FinAssist running on http://{host}:{port}/\n")
+    try:
+        app.run(host=host, debug=False, port=port)
+    except OSError as e:
+        if ("Address already in use" in str(e) or getattr(e, 'errno', None) == 48) and port == 5000:
+            print("\n⚠️ Port 5000 is in use. Switching to port 5001 -> http://127.0.0.1:5001/\n")
+            app.run(host=host, debug=False, port=5001)
+        else:
+            raise

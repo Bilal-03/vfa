@@ -1,0 +1,1080 @@
+{
+  "metadata": {
+    "market": "US",
+    "seed": 42,
+    "feature_order": [
+      "return_1d",
+      "return_5d",
+      "rsi_norm",
+      "macd_norm",
+      "macd_hist_norm",
+      "ema9_ratio",
+      "ema21_ratio",
+      "ema50_ratio",
+      "bollinger_pct_b",
+      "bollinger_bandwidth",
+      "norm_atr",
+      "stoch_k_norm",
+      "volume_surge",
+      "hist_volatility"
+    ],
+    "mean": [
+      -0.0020272727124392986,
+      -0.010314257815480232,
+      -0.07454072684049606,
+      -1.6734929084777832,
+      -0.027217533439397812,
+      -0.008423707447946072,
+      -0.02064427174627781,
+      -0.04630299657583237,
+      -0.1731587052345276,
+      0.19110696017742157,
+      0.7913967370986938,
+      -0.09285014867782593,
+      -0.00011285536311333999,
+      0.4406672418117523
+    ],
+    "std": [
+      0.029424740001559258,
+      0.06252281367778778,
+      0.20678167045116425,
+      2.950838327407837,
+      1.0039987564086914,
+      0.03672853112220764,
+      0.056377049535512924,
+      0.07637675851583481,
+      0.6277710795402527,
+      0.08947516232728958,
+      0.3113703429698944,
+      0.671042799949646,
+      0.2375318706035614,
+      0.16225232183933258
+    ],
+    "symbols": [
+      "AAPL",
+      "MSFT",
+      "NVDA"
+    ],
+    "horizon_sessions": 3,
+    "threshold_pct": 0.75,
+    "news_enabled": true,
+    "split_counts": {
+      "train": 516,
+      "validation": 105,
+      "test": 114
+    },
+    "split_dates": {
+      "train": [
+        "2022-03-04",
+        "2022-11-07"
+      ],
+      "validation": [
+        "2022-11-11",
+        "2023-01-03"
+      ],
+      "test": [
+        "2023-01-09",
+        "2023-03-03"
+      ]
+    },
+    "missing_news_rate": 0.49269588313413015,
+    "class_counts": [
+      309,
+      105,
+      339
+    ],
+    "news_sha256": "878fae1f3d2e6f224ac2f0489fd3fcf4f639d9e7284ce435db9fc12d8adb227c",
+    "epochs_requested": 30,
+    "version": "finassist-v2",
+    "protocol": "Chronological 70/15/15 holdout with purged target boundaries",
+    "prices_sha256": {
+      "AAPL": "9eeacb14b10488e6392478ee8e084c4175b1d3d42b12b02643a549fc777782a0",
+      "MSFT": "cbee3b49a1b32dba0dd984aff3101a78b55739a5fc353037dd4ff06bd47dab0b",
+      "NVDA": "c9257d505cf499a6bff7734f24594d87a4e64cd37037be510779208fcc50a9a0"
+    }
+  },
+  "models": {
+    "Majority": {
+      "accuracy_pct": 27.192982456140353,
+      "balanced_accuracy_pct": 33.33333333333333,
+      "macro_f1": 0.1425287356321839,
+      "mcc": 0.0,
+      "confusion_matrix": [
+        [
+          31,
+          0,
+          0
+        ],
+        [
+          15,
+          0,
+          0
+        ],
+        [
+          68,
+          0,
+          0
+        ]
+      ],
+      "samples": 114
+    },
+    "Technical logistic regression": {
+      "accuracy_pct": 44.73684210526316,
+      "balanced_accuracy_pct": 40.79696394686907,
+      "macro_f1": 0.3189761694616064,
+      "mcc": 0.15625360948587658,
+      "confusion_matrix": [
+        [
+          27,
+          0,
+          4
+        ],
+        [
+          8,
+          0,
+          7
+        ],
+        [
+          44,
+          0,
+          24
+        ]
+      ],
+      "samples": 114
+    },
+    "technical": {
+      "accuracy_pct": 26.31578947368421,
+      "balanced_accuracy_pct": 36.7067257010331,
+      "macro_f1": 0.26794919225551855,
+      "mcc": 0.026827103003655997,
+      "confusion_matrix": [
+        [
+          8,
+          16,
+          7
+        ],
+        [
+          2,
+          10,
+          3
+        ],
+        [
+          12,
+          44,
+          12
+        ]
+      ],
+      "samples": 114
+    },
+    "sentiment": {
+      "accuracy_pct": 42.10526315789473,
+      "balanced_accuracy_pct": 35.81593927893738,
+      "macro_f1": 0.299558693733451,
+      "mcc": 0.058248095043982054,
+      "confusion_matrix": [
+        [
+          21,
+          0,
+          10
+        ],
+        [
+          10,
+          0,
+          5
+        ],
+        [
+          41,
+          0,
+          27
+        ]
+      ],
+      "samples": 114
+    },
+    "concat": {
+      "accuracy_pct": 55.26315789473685,
+      "balanced_accuracy_pct": 44.92409867172675,
+      "macro_f1": 0.3887890765361121,
+      "mcc": 0.2474877036491001,
+      "confusion_matrix": [
+        [
+          24,
+          0,
+          7
+        ],
+        [
+          8,
+          0,
+          7
+        ],
+        [
+          29,
+          0,
+          39
+        ]
+      ],
+      "samples": 114
+    },
+    "gated": {
+      "accuracy_pct": 31.57894736842105,
+      "balanced_accuracy_pct": 44.959940965633564,
+      "macro_f1": 0.3001186182498752,
+      "mcc": 0.1284012892045237,
+      "confusion_matrix": [
+        [
+          23,
+          6,
+          2
+        ],
+        [
+          5,
+          8,
+          2
+        ],
+        [
+          34,
+          29,
+          5
+        ]
+      ],
+      "samples": 114
+    },
+    "gated_missing": {
+      "accuracy_pct": 28.07017543859649,
+      "balanced_accuracy_pct": 40.61248155176049,
+      "macro_f1": 0.2911561072007737,
+      "mcc": 0.08737300466141475,
+      "confusion_matrix": [
+        [
+          13,
+          14,
+          4
+        ],
+        [
+          3,
+          10,
+          2
+        ],
+        [
+          16,
+          43,
+          9
+        ]
+      ],
+      "samples": 114
+    },
+    "gated_stale": {
+      "accuracy_pct": 31.57894736842105,
+      "balanced_accuracy_pct": 44.374868226860634,
+      "macro_f1": 0.30515802027429934,
+      "mcc": 0.1343046938139792,
+      "confusion_matrix": [
+        [
+          22,
+          7,
+          2
+        ],
+        [
+          5,
+          8,
+          2
+        ],
+        [
+          28,
+          34,
+          6
+        ]
+      ],
+      "samples": 114
+    },
+    "no_freshness": {
+      "accuracy_pct": 30.701754385964914,
+      "balanced_accuracy_pct": 43.88467214842927,
+      "macro_f1": 0.2953202769876711,
+      "mcc": 0.10088960204481486,
+      "confusion_matrix": [
+        [
+          22,
+          6,
+          3
+        ],
+        [
+          4,
+          8,
+          3
+        ],
+        [
+          34,
+          29,
+          5
+        ]
+      ],
+      "samples": 114
+    },
+    "no_mask": {
+      "accuracy_pct": 33.33333333333333,
+      "balanced_accuracy_pct": 44.20830697870546,
+      "macro_f1": 0.3237140295100676,
+      "mcc": 0.08191087551396392,
+      "confusion_matrix": [
+        [
+          23,
+          1,
+          7
+        ],
+        [
+          4,
+          7,
+          4
+        ],
+        [
+          36,
+          24,
+          8
+        ]
+      ],
+      "samples": 114
+    }
+  },
+  "per_symbol": {
+    "Majority": {
+      "AAPL": {
+        "accuracy_pct": 23.684210526315788,
+        "balanced_accuracy_pct": 33.33333333333333,
+        "macro_f1": 0.1276595744680851,
+        "mcc": 0.0,
+        "confusion_matrix": [
+          [
+            9,
+            0,
+            0
+          ],
+          [
+            7,
+            0,
+            0
+          ],
+          [
+            22,
+            0,
+            0
+          ]
+        ],
+        "samples": 38
+      },
+      "MSFT": {
+        "accuracy_pct": 28.947368421052634,
+        "balanced_accuracy_pct": 33.33333333333333,
+        "macro_f1": 0.14965986394557823,
+        "mcc": 0.0,
+        "confusion_matrix": [
+          [
+            11,
+            0,
+            0
+          ],
+          [
+            6,
+            0,
+            0
+          ],
+          [
+            21,
+            0,
+            0
+          ]
+        ],
+        "samples": 38
+      },
+      "NVDA": {
+        "accuracy_pct": 28.947368421052634,
+        "balanced_accuracy_pct": 33.33333333333333,
+        "macro_f1": 0.14965986394557823,
+        "mcc": 0.0,
+        "confusion_matrix": [
+          [
+            11,
+            0,
+            0
+          ],
+          [
+            2,
+            0,
+            0
+          ],
+          [
+            25,
+            0,
+            0
+          ]
+        ],
+        "samples": 38
+      }
+    },
+    "Technical logistic regression": {
+      "AAPL": {
+        "accuracy_pct": 65.78947368421053,
+        "balanced_accuracy_pct": 53.198653198653204,
+        "macro_f1": 0.463768115942029,
+        "mcc": 0.39634011252499807,
+        "confusion_matrix": [
+          [
+            7,
+            0,
+            2
+          ],
+          [
+            3,
+            0,
+            4
+          ],
+          [
+            4,
+            0,
+            18
+          ]
+        ],
+        "samples": 38
+      },
+      "MSFT": {
+        "accuracy_pct": 39.473684210526315,
+        "balanced_accuracy_pct": 36.7965367965368,
+        "macro_f1": 0.28289473684210525,
+        "mcc": 0.05924761688055299,
+        "confusion_matrix": [
+          [
+            9,
+            0,
+            2
+          ],
+          [
+            3,
+            0,
+            3
+          ],
+          [
+            15,
+            0,
+            6
+          ]
+        ],
+        "samples": 38
+      },
+      "NVDA": {
+        "accuracy_pct": 28.947368421052634,
+        "balanced_accuracy_pct": 33.33333333333333,
+        "macro_f1": 0.14965986394557823,
+        "mcc": 0.0,
+        "confusion_matrix": [
+          [
+            11,
+            0,
+            0
+          ],
+          [
+            2,
+            0,
+            0
+          ],
+          [
+            25,
+            0,
+            0
+          ]
+        ],
+        "samples": 38
+      }
+    },
+    "technical": {
+      "AAPL": {
+        "accuracy_pct": 31.57894736842105,
+        "balanced_accuracy_pct": 39.85088985088985,
+        "macro_f1": 0.28578000115002017,
+        "mcc": 0.0705278841598269,
+        "confusion_matrix": [
+          [
+            1,
+            5,
+            3
+          ],
+          [
+            0,
+            6,
+            1
+          ],
+          [
+            1,
+            16,
+            5
+          ]
+        ],
+        "samples": 38
+      },
+      "MSFT": {
+        "accuracy_pct": 23.684210526315788,
+        "balanced_accuracy_pct": 26.190476190476193,
+        "macro_f1": 0.18572825024437925,
+        "mcc": -0.09402497333524597,
+        "confusion_matrix": [
+          [
+            0,
+            7,
+            4
+          ],
+          [
+            1,
+            3,
+            2
+          ],
+          [
+            0,
+            15,
+            6
+          ]
+        ],
+        "samples": 38
+      },
+      "NVDA": {
+        "accuracy_pct": 23.684210526315788,
+        "balanced_accuracy_pct": 39.21212121212121,
+        "macro_f1": 0.21452991452991452,
+        "mcc": 0.09927003120274724,
+        "confusion_matrix": [
+          [
+            7,
+            4,
+            0
+          ],
+          [
+            1,
+            1,
+            0
+          ],
+          [
+            11,
+            13,
+            1
+          ]
+        ],
+        "samples": 38
+      }
+    },
+    "sentiment": {
+      "AAPL": {
+        "accuracy_pct": 39.473684210526315,
+        "balanced_accuracy_pct": 33.670033670033675,
+        "macro_f1": 0.282051282051282,
+        "mcc": 0.009093056465237118,
+        "confusion_matrix": [
+          [
+            5,
+            0,
+            4
+          ],
+          [
+            4,
+            0,
+            3
+          ],
+          [
+            12,
+            0,
+            10
+          ]
+        ],
+        "samples": 38
+      },
+      "MSFT": {
+        "accuracy_pct": 47.368421052631575,
+        "balanced_accuracy_pct": 41.55844155844156,
+        "macro_f1": 0.34313725490196073,
+        "mcc": 0.18339903598755322,
+        "confusion_matrix": [
+          [
+            9,
+            0,
+            2
+          ],
+          [
+            4,
+            0,
+            2
+          ],
+          [
+            12,
+            0,
+            9
+          ]
+        ],
+        "samples": 38
+      },
+      "NVDA": {
+        "accuracy_pct": 39.473684210526315,
+        "balanced_accuracy_pct": 31.87878787878788,
+        "macro_f1": 0.2702702702702703,
+        "mcc": -0.024313526383701843,
+        "confusion_matrix": [
+          [
+            7,
+            0,
+            4
+          ],
+          [
+            2,
+            0,
+            0
+          ],
+          [
+            17,
+            0,
+            8
+          ]
+        ],
+        "samples": 38
+      }
+    },
+    "concat": {
+      "AAPL": {
+        "accuracy_pct": 55.26315789473685,
+        "balanced_accuracy_pct": 49.32659932659932,
+        "macro_f1": 0.39999999999999997,
+        "mcc": 0.30526689561867465,
+        "confusion_matrix": [
+          [
+            8,
+            0,
+            1
+          ],
+          [
+            4,
+            0,
+            3
+          ],
+          [
+            9,
+            0,
+            13
+          ]
+        ],
+        "samples": 38
+      },
+      "MSFT": {
+        "accuracy_pct": 55.26315789473685,
+        "balanced_accuracy_pct": 44.877344877344875,
+        "macro_f1": 0.39444444444444443,
+        "mcc": 0.2431083191631576,
+        "confusion_matrix": [
+          [
+            8,
+            0,
+            3
+          ],
+          [
+            3,
+            0,
+            3
+          ],
+          [
+            8,
+            0,
+            13
+          ]
+        ],
+        "samples": 38
+      },
+      "NVDA": {
+        "accuracy_pct": 55.26315789473685,
+        "balanced_accuracy_pct": 41.57575757575758,
+        "macro_f1": 0.373015873015873,
+        "mcc": 0.20172489740786193,
+        "confusion_matrix": [
+          [
+            8,
+            0,
+            3
+          ],
+          [
+            1,
+            0,
+            1
+          ],
+          [
+            12,
+            0,
+            13
+          ]
+        ],
+        "samples": 38
+      }
+    },
+    "gated": {
+      "AAPL": {
+        "accuracy_pct": 34.21052631578947,
+        "balanced_accuracy_pct": 49.062049062049056,
+        "macro_f1": 0.3415384615384615,
+        "mcc": 0.18325728549295442,
+        "confusion_matrix": [
+          [
+            6,
+            2,
+            1
+          ],
+          [
+            2,
+            5,
+            0
+          ],
+          [
+            8,
+            12,
+            2
+          ]
+        ],
+        "samples": 38
+      },
+      "MSFT": {
+        "accuracy_pct": 34.21052631578947,
+        "balanced_accuracy_pct": 42.640692640692635,
+        "macro_f1": 0.35389570172178875,
+        "mcc": 0.1356800317273836,
+        "confusion_matrix": [
+          [
+            7,
+            3,
+            1
+          ],
+          [
+            1,
+            3,
+            2
+          ],
+          [
+            4,
+            14,
+            3
+          ]
+        ],
+        "samples": 38
+      },
+      "NVDA": {
+        "accuracy_pct": 26.31578947368421,
+        "balanced_accuracy_pct": 30.303030303030305,
+        "macro_f1": 0.14814814814814814,
+        "mcc": -0.004603263213074933,
+        "confusion_matrix": [
+          [
+            10,
+            1,
+            0
+          ],
+          [
+            2,
+            0,
+            0
+          ],
+          [
+            22,
+            3,
+            0
+          ]
+        ],
+        "samples": 38
+      }
+    },
+    "gated_missing": {
+      "AAPL": {
+        "accuracy_pct": 31.57894736842105,
+        "balanced_accuracy_pct": 42.03944203944204,
+        "macro_f1": 0.30812324929971985,
+        "mcc": 0.12215593974737034,
+        "confusion_matrix": [
+          [
+            2,
+            5,
+            2
+          ],
+          [
+            1,
+            6,
+            0
+          ],
+          [
+            2,
+            16,
+            4
+          ]
+        ],
+        "samples": 38
+      },
+      "MSFT": {
+        "accuracy_pct": 28.947368421052634,
+        "balanced_accuracy_pct": 33.694083694083695,
+        "macro_f1": 0.30277777777777776,
+        "mcc": 0.03736444945378304,
+        "confusion_matrix": [
+          [
+            3,
+            6,
+            2
+          ],
+          [
+            1,
+            3,
+            2
+          ],
+          [
+            1,
+            15,
+            5
+          ]
+        ],
+        "samples": 38
+      },
+      "NVDA": {
+        "accuracy_pct": 23.684210526315788,
+        "balanced_accuracy_pct": 40.909090909090914,
+        "macro_f1": 0.19865319865319866,
+        "mcc": 0.09728432006802391,
+        "confusion_matrix": [
+          [
+            8,
+            3,
+            0
+          ],
+          [
+            1,
+            1,
+            0
+          ],
+          [
+            13,
+            12,
+            0
+          ]
+        ],
+        "samples": 38
+      }
+    },
+    "gated_stale": {
+      "AAPL": {
+        "accuracy_pct": 34.21052631578947,
+        "balanced_accuracy_pct": 46.87349687349687,
+        "macro_f1": 0.3505957643888678,
+        "mcc": 0.17671704972257374,
+        "confusion_matrix": [
+          [
+            5,
+            3,
+            1
+          ],
+          [
+            2,
+            5,
+            0
+          ],
+          [
+            5,
+            14,
+            3
+          ]
+        ],
+        "samples": 38
+      },
+      "MSFT": {
+        "accuracy_pct": 34.21052631578947,
+        "balanced_accuracy_pct": 42.640692640692635,
+        "macro_f1": 0.3602693602693603,
+        "mcc": 0.1430260047281324,
+        "confusion_matrix": [
+          [
+            7,
+            3,
+            1
+          ],
+          [
+            1,
+            3,
+            2
+          ],
+          [
+            3,
+            15,
+            3
+          ]
+        ],
+        "samples": 38
+      },
+      "NVDA": {
+        "accuracy_pct": 26.31578947368421,
+        "balanced_accuracy_pct": 30.303030303030305,
+        "macro_f1": 0.15503875968992248,
+        "mcc": 0.030993786368687184,
+        "confusion_matrix": [
+          [
+            10,
+            1,
+            0
+          ],
+          [
+            2,
+            0,
+            0
+          ],
+          [
+            20,
+            5,
+            0
+          ]
+        ],
+        "samples": 38
+      }
+    },
+    "no_freshness": {
+      "AAPL": {
+        "accuracy_pct": 31.57894736842105,
+        "balanced_accuracy_pct": 45.35834535834535,
+        "macro_f1": 0.322515380486395,
+        "mcc": 0.10285527590943366,
+        "confusion_matrix": [
+          [
+            5,
+            2,
+            2
+          ],
+          [
+            1,
+            5,
+            1
+          ],
+          [
+            8,
+            12,
+            2
+          ]
+        ],
+        "samples": 38
+      },
+      "MSFT": {
+        "accuracy_pct": 34.21052631578947,
+        "balanced_accuracy_pct": 42.640692640692635,
+        "macro_f1": 0.35389570172178875,
+        "mcc": 0.1356800317273836,
+        "confusion_matrix": [
+          [
+            7,
+            3,
+            1
+          ],
+          [
+            1,
+            3,
+            2
+          ],
+          [
+            4,
+            14,
+            3
+          ]
+        ],
+        "samples": 38
+      },
+      "NVDA": {
+        "accuracy_pct": 26.31578947368421,
+        "balanced_accuracy_pct": 30.303030303030305,
+        "macro_f1": 0.14814814814814814,
+        "mcc": -0.004603263213074933,
+        "confusion_matrix": [
+          [
+            10,
+            1,
+            0
+          ],
+          [
+            2,
+            0,
+            0
+          ],
+          [
+            22,
+            3,
+            0
+          ]
+        ],
+        "samples": 38
+      }
+    },
+    "no_mask": {
+      "AAPL": {
+        "accuracy_pct": 34.21052631578947,
+        "balanced_accuracy_pct": 43.62674362674363,
+        "macro_f1": 0.3552449965493443,
+        "mcc": 0.056248699263869106,
+        "confusion_matrix": [
+          [
+            5,
+            0,
+            4
+          ],
+          [
+            1,
+            4,
+            2
+          ],
+          [
+            8,
+            10,
+            4
+          ]
+        ],
+        "samples": 38
+      },
+      "MSFT": {
+        "accuracy_pct": 36.84210526315789,
+        "balanced_accuracy_pct": 44.22799422799422,
+        "macro_f1": 0.37079365079365084,
+        "mcc": 0.11089821648384617,
+        "confusion_matrix": [
+          [
+            7,
+            1,
+            3
+          ],
+          [
+            1,
+            3,
+            2
+          ],
+          [
+            6,
+            11,
+            4
+          ]
+        ],
+        "samples": 38
+      },
+      "NVDA": {
+        "accuracy_pct": 28.947368421052634,
+        "balanced_accuracy_pct": 33.33333333333333,
+        "macro_f1": 0.15942028985507248,
+        "mcc": 0.0707252321330352,
+        "confusion_matrix": [
+          [
+            11,
+            0,
+            0
+          ],
+          [
+            2,
+            0,
+            0
+          ],
+          [
+            22,
+            3,
+            0
+          ]
+        ],
+        "samples": 38
+      }
+    }
+  }
+}

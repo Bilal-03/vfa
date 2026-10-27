@@ -15,6 +15,7 @@ const FinTracker = (() => {
     let _username = LS.get('username') || null;  // null = not identified yet
     let _portfolioCache = [];                     // in-memory cache for fast renders
 
+    const localStorageMode = document.documentElement.dataset.portfolioStorage === 'sqlite';
     const getUsername = () => _username;
 
     // ── Symbol resolver ───────────────────────────────────────────────────────
@@ -99,25 +100,48 @@ const FinTracker = (() => {
         setTimeout(()=>{t.classList.remove('pt-toast-show');setTimeout(()=>t.remove(),350);},2800);
     }
 
-    // ── Logo — 3-tier fallback: Clearbit → DuckDuckGo → letter tile ─────────
-    function mkLogo(name, logo, domain, sz='36px', r='10px') {
-        const init = (name||'??').split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    // ── Logo — Multi-tier squircle: Parqet → Google Favicon → DuckDuckGo → Pastel Gradient Avatar ─────────
+    function mkLogo(name, logo, domain, sz='36px', r='10px', sym='') {
+        if (typeof window.renderStockSquircle === 'function') {
+            return window.renderStockSquircle(sym || name, name, sz, r);
+        }
+        const s = (sym || name || '').toUpperCase().trim();
+        const clean = s.replace('.NS','').replace('.BO','');
+        const isUS = ['AAPL','MSFT','GOOGL','GOOG','AMZN','META','TSLA','NVDA','NFLX','AMD','INTC','JPM','BAC','V','MA','WMT','DIS'].includes(clean);
+        const parqetSym = s.endsWith('.NS') ? s : (isUS ? clean : clean + '.NS');
+        const src = logo || `https://assets.parqet.com/logos/symbol/${parqetSym}`;
+        const gFavicon = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=128` : null;
+        const ddg = domain ? `https://icons.duckduckgo.com/ip3/${domain}.ico` : null;
+        const init = (name||clean||'??').split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
         const id = 'logo_' + Math.random().toString(36).slice(2,8);
         const fb = 'fblg_' + Math.random().toString(36).slice(2,8);
+        const gradients = [
+            'linear-gradient(135deg, #6366f1, #8b5cf6)',
+            'linear-gradient(135deg, #3b82f6, #06b6d4)',
+            'linear-gradient(135deg, #059669, #10b981)',
+            'linear-gradient(135deg, #f59e0b, #ef4444)',
+            'linear-gradient(135deg, #ec4899, #8b5cf6)'
+        ];
+        let hash = 0;
+        for (let i = 0; i < clean.length; i++) hash = clean.charCodeAt(i) + ((hash << 5) - hash);
+        const grad = gradients[Math.abs(hash) % gradients.length];
+        const fbHtml = `<div id="${fb}" class="pt-logo-fb" style="width:${sz};height:${sz};border-radius:${r};background:${grad};color:#fff;font-weight:800;display:none;align-items:center;justify-content:center;font-size:calc(${sz}*0.42);">${init}</div>`;
 
-        // Build the fallback chain
-        const ddg = domain ? `https://icons.duckduckgo.com/ip3/${domain}.ico` : null;
-        const showFallbackFn = `var f=document.getElementById('${fb}');if(f){f.style.display='flex';}this.style.display='none';`;
-        const onerrorAttr = ddg
-            ? `this.onerror=function(){${showFallbackFn}};this.src='${ddg}';`
-            : showFallbackFn;
-
-        const src = logo || (domain ? `https://logo.clearbit.com/${domain}` : null);
-        if (src) {
-            return `<img src="${src}" id="${id}" style="width:${sz};height:${sz};border-radius:${r};object-fit:contain;background:#fff;border:1px solid #e2e8f0;padding:4px;display:block;" onerror="${onerrorAttr}">
-                <div id="${fb}" class="pt-logo-fb" style="width:${sz};height:${sz};border-radius:${r};display:none;">${init}</div>`;
+        let onerrorAttr = '';
+        if (gFavicon) {
+            if (ddg) {
+                onerrorAttr = `this.onerror=function(){this.onerror=function(){var f=document.getElementById('${fb}');if(f)f.style.display='flex';this.style.display='none';};this.src='${ddg}';};this.src='${gFavicon}';`;
+            } else {
+                onerrorAttr = `this.onerror=function(){var f=document.getElementById('${fb}');if(f)f.style.display='flex';this.style.display='none';};this.src='${gFavicon}';`;
+            }
+        } else {
+            onerrorAttr = `var f=document.getElementById('${fb}');if(f)f.style.display='flex';this.style.display='none';`;
         }
-        return `<div class="pt-logo-fb" style="width:${sz};height:${sz};border-radius:${r};">${init}</div>`;
+
+        return `<div style="position:relative;width:${sz};height:${sz};">
+            <img src="${src}" id="${id}" style="width:${sz};height:${sz};border-radius:${r};object-fit:contain;background:#fff;border:1px solid #e2e8f0;padding:3px;display:block;box-shadow:0 1px 4px rgba(0,0,0,0.05);" onerror="${onerrorAttr}">
+            ${fbHtml}
+        </div>`;
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -136,7 +160,7 @@ const FinTracker = (() => {
                     </div>
                     <div class="pt-identity-title">Set Your Portfolio Identity</div>
                     <div class="pt-identity-sub">
-                        Choose a unique username to save and sync your portfolio across any browser or device.
+                        ${localStorageMode ? 'Laptop storage: holdings are saved on this computer. Use a username to reopen them here.' : 'Choose a unique username to save and sync your portfolio across any browser or device.'}
                         No password or signup required — just pick a name and you're good to go.
                     </div>
                     <div class="pt-identity-input-wrap">
@@ -365,7 +389,7 @@ const FinTracker = (() => {
             }
             return `<tr class="pt-tr" onclick="showStockFromPortfolio('${h.symbol}')" style="cursor:pointer;" title="View ${display(h.symbol)}">
                 <td><div class="pt-stock-cell">
-                    <div class="pt-logo-wrap">${mkLogo(name, p?.logo, p?.logo_domain, '34px', '9px')}</div>
+                    <div class="pt-logo-wrap">${mkLogo(name, p?.logo, p?.logo_domain, '34px', '9px', h.symbol)}</div>
                     <div><div class="pt-sym">${display(h.symbol)}</div><div class="pt-cname">${name.length>18?name.slice(0,18)+'…':name}</div></div>
                 </div></td>
                 <td class="pt-mono">${fmtN(h.qty,h.qty%1===0?0:2)}</td>

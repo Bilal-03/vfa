@@ -1,0 +1,12 @@
+{
+  "test_username": "fa_insight_test_df264149",
+  "storage": "sqlite",
+  "synthetic_records": true,
+  "holdings_count": 4,
+  "saved_and_reloaded": true,
+  "analysis_left_holdings_unchanged": true,
+  "analysis_status": "ready",
+  "cleanup_complete": true,
+  "survived_server_restart": true,
+  "test_identity_cleared_in_browser": true
+}
