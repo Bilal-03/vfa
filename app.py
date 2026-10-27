@@ -29,6 +29,8 @@ def _supa() -> Client:
         raise RuntimeError("SUPABASE_URL and SUPABASE_KEY must be set in .env")
     return create_client(_SUPABASE_URL, _SUPABASE_KEY)
 app = Flask(__name__)
+from json_provider import FiniteJSONProvider
+app.json = FiniteJSONProvider(app)
 APP_COMMIT = os.environ.get('RENDER_GIT_COMMIT') or os.environ.get('APP_COMMIT', 'local')
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "fallback-dev-key")
 app.config['TEMPLATES_AUTO_RELOAD'] = True

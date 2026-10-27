@@ -12,6 +12,7 @@ Key fixes (2026-04):
 """
 
 import time
+import math
 import threading
 import os
 import requests
@@ -34,7 +35,7 @@ def _set(key, data, ttl):
 def _safe(v, d=2):
     try:
         f = float(v)
-        return None if f != f else round(f, d)
+        return round(f, d) if math.isfinite(f) else None
     except:
         return None
 
@@ -304,7 +305,7 @@ def get_profile(symbol):
 
 def get_quote(symbol):
     """
-    Three-tier fallback to guarantee a valid price is always returned:
+    Three-tier quote lookup; return unavailable if no usable price is found:
 
     Tier 1 — Twelve Data API
       Correct symbol format (HDFCBANK:NSE, AAPL), no IP blocking, 800 req/day free.
@@ -315,8 +316,8 @@ def get_quote(symbol):
       May return 0 on Indian stocks when market is closed — detected and skipped.
 
     Tier 3 — yfinance .history(period='5d')
-      ALWAYS reliable. Returns OHLCV even on weekends, holidays, after market close.
-      This is what was used before and we keep it as the guaranteed fallback.
+      Uses the latest row with a finite positive close. Provider histories can
+      contain empty placeholder rows even when earlier sessions are usable.
     """
     k = f"quote:{symbol}"
     c = _get(k)
@@ -357,10 +358,11 @@ def get_quote(symbol):
     except Exception:
         pass
 
-    # ── Tier 3: yfinance .history() — guaranteed fallback ─────────────────────
-    # Works market open OR closed, weekends, holidays. Always returns OHLCV.
+    # ── Tier 3: latest usable yfinance history row ────────────────────────────
     try:
         hist = yf.Ticker(symbol).history(period='5d')
+        if not hist.empty:
+            hist = hist.loc[hist['Close'].map(lambda v: (_safe(v, 8) or 0) > 0)].sort_index()
         if not hist.empty and len(hist) >= 1:
             cur  = round(float(hist['Close'].iloc[-1]), 2)
             prev = round(float(hist['Close'].iloc[-2]), 2) if len(hist) >= 2 else cur
@@ -372,11 +374,11 @@ def get_quote(symbol):
                 "current":    cur,
                 "change":     chg,
                 "change_pct": chgp,
-                "high":       round(float(hist['High'].iloc[-1]), 2),
-                "low":        round(float(hist['Low'].iloc[-1]),  2),
-                "open":       round(float(hist['Open'].iloc[-1]), 2),
+                "high":       _safe(hist['High'].iloc[-1]),
+                "low":        _safe(hist['Low'].iloc[-1]),
+                "open":       _safe(hist['Open'].iloc[-1]),
                 "prev_close": prev,
-                "volume":     int(vol) if vol == vol else 0,  # NaN guard
+                "volume":     int(vol) if _safe(vol) is not None else None,
                 "avg_volume": None,
                 "currency":   _symbol_currency(symbol),
                 "_source":    "yfinance_history",
@@ -533,7 +535,7 @@ def get_metrics(symbol):
         def first(*vals):
             """Return the first non-None, non-NaN value from multiple sources."""
             for v in vals:
-                r = _safe(v) if not isinstance(v, (int, float)) else v
+                r = v if isinstance(v, (int, float)) and math.isfinite(v) else _safe(v)
                 if r is not None:
                     return r
             return None
