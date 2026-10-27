@@ -99,7 +99,7 @@ def clean_history(raw, sessions):
     return frame, dict(duplicates_removed=duplicates, missing_sessions=missing, split_events=int((splits!=0).sum()), warnings=warnings)
 
 
-def _download(s):
+def _download_uncached(s):
     fetched = datetime.now(timezone.utc)
     replay = os.environ.get('STOCK_INSIGHTS_AS_OF','').strip()
     now = pd.Timestamp(replay) if replay else pd.Timestamp(fetched)
@@ -141,6 +141,45 @@ def _download(s):
     return frame, meta
 
 
+def _download(s):
+    import market_cache
+    if not market_cache.enabled() or os.environ.get('STOCK_INSIGHTS_AS_OF') or os.environ.get('STOCK_INSIGHTS_SNAPSHOT_DIR'):
+        return _download_uncached(s)
+    def fetch():
+        frame, meta = _download_uncached(s)
+        # Completed-session eligibility determines refresh, including weekends/holidays.
+        now = pd.Timestamp.now(tz='UTC')
+        market = ('BSE' if s.endswith('.BO') else 'NSE') if currency(s)=='INR' else 'NYSE'
+        upcoming = schedule(market, str(now.date()), str((now+pd.Timedelta(days=14)).date()))
+        closes = upcoming.market_close + pd.Timedelta(minutes=15)
+        future = closes[closes > now]
+        ttl = 900 if meta['stale'] or future.empty else max(1, (future.iloc[0]-now).total_seconds())
+        return {'frame': frame.to_json(orient='split', date_format='iso'), 'metadata': meta,
+                '_source': meta['source'], '_observation_date': meta['observation_date'], '_ttl': ttl}
+    data = market_cache.cache.get(s, 'history', fetch, 86400)
+    if not data.get('frame'):
+        raise ValueError('Daily price provider unavailable: '+str(data.get('error', 'missing history')))
+    from io import StringIO
+    frame = pd.read_json(StringIO(data['frame']), orient='split')
+    meta = dict(data['metadata'])
+    expected = completed_sessions(s)[-1]
+    last = frame.Close.last_valid_index()
+    meta.update(expected_session=str(expected.date()), observation_date=str(last.date()),
+                stale=last < expected, data_quality=data['data_quality'])
+    with _lock:
+        _cache[s] = (time.monotonic(), frame, meta)
+    return frame, meta
+
+
+def _usable_history(frame, meta):
+    if not os.environ.get('STOCK_INSIGHTS_AS_OF'):
+        expected = pd.Timestamp(meta.get('expected_session') or frame.index[-1])
+        observed = frame.Close.last_valid_index()
+        if (expected-observed).days > 7:
+            raise ValueError('Daily history is more than seven calendar days old.')
+    return frame.copy(), dict(meta)
+
+
 def history(s):
     replay = os.environ.get('STOCK_INSIGHTS_AS_OF', '').strip()
     eligible = completed_sessions(s, replay or None)
@@ -151,14 +190,14 @@ def history(s):
         # A session becoming complete invalidates even a recently fetched bar.
         if (cached and time.monotonic()-cached[0] < ttl
                 and cached[2].get('expected_session') == expected):
-            return cached[1].copy(), dict(cached[2])
+            return _usable_history(cached[1], cached[2])
         future = _pending.get(s)
         if future is None or future.done():
             future = _pool.submit(_download, s)
             _pending[s] = future
     try:
         frame, meta = future.result(timeout=14)
-        return frame.copy(), dict(meta)
+        return _usable_history(frame, meta)
     except TimeoutError:
         raise ValueError('Price provider timed out. Retry shortly.')
 

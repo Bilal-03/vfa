@@ -18,6 +18,7 @@ import os
 import requests
 from datetime import datetime, timezone
 import yfinance as yf
+from market_cache import cached, note_error
 
 # ── Cache ──────────────────────────────────────────────────────────────────────
 _cache: dict = {}
@@ -88,10 +89,12 @@ def _twelve_data_quote(symbol):
         )
         r = requests.get(url, timeout=8)
         if r.status_code != 200:
+            note_error(str(r.status_code))
             return None
         d = r.json()
         # Error responses from Twelve Data have a "code" or "status":"error" field
         if "code" in d or ("status" in d and d.get("status") == "error"):
+            note_error(str(d.get("code", ""))+" "+str(d.get("message", "")))
             return None
         cur  = _safe(d.get("close"))
         prev = _safe(d.get("previous_close"))
@@ -114,9 +117,11 @@ def _twelve_data_quote(symbol):
             "avg_volume":  None,
             "currency":    currency,
             "_source":     "twelvedata",
+            "_observation_date": str(d.get("datetime"))[:10] if d.get("datetime") else None,
         }
     except Exception as e:
-        print(f"  ⚠ Twelve Data quote failed for {symbol}: {e}")
+        note_error(e)
+        print(f"  ⚠ Twelve Data quote failed for {symbol}: {type(e).__name__}")
         return None
 
 
@@ -297,6 +302,9 @@ def get_profile(symbol):
         "employees":   info.get("fullTimeEmployees"),
         "market_cap":  info.get("marketCap"),
     }
+    profile_keys = {'name':'longName' if info.get('longName') else 'shortName','exchange':'exchange','industry':'industry','sector':'sector','country':'country','currency':'currency','web_url':'website','description':'longBusinessSummary','employees':'fullTimeEmployees','market_cap':'marketCap'}
+    info_quality = td.get('data_quality', {}).get('fields', {})
+    data['_field_sources'] = {field: info_quality['info.'+key] for field,key in profile_keys.items() if 'info.'+key in info_quality}
     if "error" in td:
         data["error"] = td["error"]
     _set(k, data, 86400)
@@ -326,7 +334,8 @@ def get_quote(symbol):
 
     # ── Tier 1: Twelve Data ────────────────────────────────────────────────────
     td_quote = _twelve_data_quote(symbol)
-    if td_quote and (td_quote.get("current") or 0) > 0:
+    if td_quote and (td_quote.get("current") or 0) > 0 and not td_quote.get("data_quality", {}).get("last_error"):
+        td_quote['_field_sources'] = td_quote.get('data_quality', {}).get('fields', {})
         _set(k, td_quote, 120)
         return td_quote
 
@@ -353,6 +362,13 @@ def get_quote(symbol):
                 "currency":   info.get("currency") or _symbol_currency(symbol),
                 "_source":    "yfinance_info",
             }
+            raw_quality = td.get('data_quality', {}).get('fields', {})
+            base_quality = dict(raw_quality.get('info.currentPrice') or raw_quality.get('info.regularMarketPrice') or {})
+            market_time = _safe(info.get('regularMarketTime'), 0)
+            if base_quality and market_time and market_time > 0:
+                base_quality['observation_date'] = datetime.fromtimestamp(market_time, timezone.utc).date().isoformat()
+            if base_quality:
+                data['_field_sources'] = {field: base_quality for field in data if field not in {'symbol', 'currency', '_source'}}
             _set(k, data, 120)
             return data
     except Exception:
@@ -360,7 +376,14 @@ def get_quote(symbol):
 
     # ── Tier 3: latest usable yfinance history row ────────────────────────────
     try:
-        hist = yf.Ticker(symbol).history(period='5d')
+        from market_cache import enabled
+        if enabled():
+            import insights_service
+            frame, _ = insights_service.history(symbol)
+            hist = frame.copy()
+            hist['Close'] = frame['RawClose']
+        else:
+            hist = yf.Ticker(symbol).history(period='5d')
         if not hist.empty:
             hist = hist.loc[hist['Close'].map(lambda v: (_safe(v, 8) or 0) > 0)].sort_index()
         if not hist.empty and len(hist) >= 1:
@@ -382,12 +405,17 @@ def get_quote(symbol):
                 "avg_volume": None,
                 "currency":   _symbol_currency(symbol),
                 "_source":    "yfinance_history",
+                "_observation_date": str(hist.index[-1].date()),
             }
             _set(k, data, 120)
             return data
     except Exception as e:
+        if td_quote and (td_quote.get("current") or 0) > 0:
+            return td_quote
         return {"error": str(e)}
 
+    if td_quote and (td_quote.get("current") or 0) > 0:
+        return td_quote
     return {"error": f"No price data available for {symbol}"}
 
 def _twelve_data_statistics(symbol):
@@ -416,9 +444,11 @@ def _twelve_data_statistics(symbol):
         )
         r = requests.get(url, timeout=12)
         if r.status_code != 200:
+            note_error(str(r.status_code))
             return {}
         d = r.json()
         if "code" in d or ("status" in d and d.get("status") == "error"):
+            note_error(str(d.get("code", ""))+" "+str(d.get("message", "")))
             return {}
 
         stats = d.get("statistics", {})
@@ -470,7 +500,8 @@ def _twelve_data_statistics(symbol):
         _set(cache_key, result, 3600)
         return result
     except Exception as e:
-        print(f"  ⚠ Twelve Data statistics failed for {symbol}: {e}")
+        note_error(e)
+        print(f"  ⚠ Twelve Data statistics failed for {symbol}: {type(e).__name__}")
         return {}
 
 
@@ -515,7 +546,8 @@ def get_metrics(symbol):
         info = td.get("info", {})
 
         # Source 4: ROE computed from balance_sheet if not available above
-        roe = tds.get("roe") or _safe(info.get("returnOnEquity"))
+        roe = tds.get("roe") or _safe(info.get("returnOnEquity"), 6)
+        roe_period = None
         if roe is None:
             try:
                 t   = yf.Ticker(symbol)
@@ -525,10 +557,14 @@ def get_metrics(symbol):
                     eq_keys = [k for k in bs.index if "Stockholders" in k or "equity" in k.lower() or "Equity" in k]
                     ni_keys = [k for k in inc.index if "Net Income" in k or "NetIncome" in k]
                     if eq_keys and ni_keys:
-                        equity     = float(bs.loc[eq_keys[0]].iloc[0])
-                        net_income = float(inc.loc[ni_keys[0]].iloc[0])
-                        if equity and equity != 0:
-                            roe = round(net_income / equity, 4)
+                        common = bs.columns.intersection(inc.columns)
+                        if len(common):
+                            period = max(common)
+                            equity = float(bs.loc[eq_keys[0], period])
+                            net_income = float(inc.loc[ni_keys[0], period])
+                            if math.isfinite(equity) and math.isfinite(net_income) and equity != 0:
+                                roe = round(net_income / equity, 4)
+                                roe_period = str(period.date())
             except Exception:
                 pass
 
@@ -555,7 +591,7 @@ def get_metrics(symbol):
             "price_to_book":     first(tds.get("price_to_book"),      info.get("priceToBook")),
             "ev_ebitda":         first(tds.get("ev_ebitda"),          info.get("enterpriseToEbitda")),
             # Margins
-            "gross_margins":     _safe(info.get("grossMargins")),     # not in TD stats
+            "gross_margins":     _safe(info.get("grossMargins"), 6),     # not in TD stats
             "profit_margins":    first(tds.get("profit_margins"),     info.get("profitMargins")),
             "operating_margins": first(tds.get("operating_margins"),  info.get("operatingMargins")),
             # Return metrics
@@ -578,6 +614,16 @@ def get_metrics(symbol):
             "total_cash":        first(tds.get("total_cash"),         info.get("totalCash")),
             "total_debt":        first(tds.get("total_debt"),         info.get("totalDebt")),
         }
+        data['_field_sources'] = {field: {'source': 'Twelve Data' if tds.get(field) is not None and tds.get(field) == value else 'Yahoo Finance'} for field, value in data.items() if field != 'symbol'}
+        metric_keys = {'market_cap':'marketCap','pe_ratio':'trailingPE','pe_forward':'forwardPE','eps_ttm':'trailingEps','eps_forward':'forwardEps','price_to_book':'priceToBook','ev_ebitda':'enterpriseToEbitda','gross_margins':'grossMargins','profit_margins':'profitMargins','operating_margins':'operatingMargins','roe':'returnOnEquity','roa':'returnOnAssets','beta':'beta','debt_equity':'debtToEquity','current_ratio':'currentRatio','quick_ratio':'quickRatio','dividend_yield':'dividendRate' if derived_yield is not None else 'trailingAnnualDividendYield','free_cashflow':'freeCashflow','total_cash':'totalCash','total_debt':'totalDebt'}
+        yahoo_quality = td.get('data_quality', {}).get('fields', {})
+        twelve_quality = tds.get('data_quality', {}).get('fields', {})
+        for field, details in data['_field_sources'].items():
+            provenance = twelve_quality.get(field) if details['source']=='Twelve Data' else yahoo_quality.get('info.'+metric_keys.get(field,''))
+            if provenance:
+                details.update(provenance)
+        if roe_period:
+            data['_field_sources']['roe'] = {'source': 'Calculated from Yahoo financial statements', 'observation_date': roe_period, 'calculation': 'Net income / ending shareholder equity, matching reporting date'}
         _set(k, data, 3600)
         return data
     except Exception as e:
@@ -633,6 +679,9 @@ def get_analyst(symbol):
             "target_low":    _safe(info.get("targetLowPrice")),
             "analyst_count": info.get("numberOfAnalystOpinions", 0),
         }
+        info_quality = td.get('data_quality', {}).get('fields', {})
+        mappings = {'consensus':'recommendationKey','analyst_count':'numberOfAnalystOpinions','target_mean':'targetMeanPrice','target_high':'targetHighPrice','target_low':'targetLowPrice'}
+        data['_field_sources'] = {field: info_quality['info.'+key] for field,key in mappings.items() if 'info.'+key in info_quality}
         _set(k, data, 3600)
         return data
     except Exception as e:
@@ -708,7 +757,9 @@ def _google_stock_news(symbol):
             source = item.findtext('source', '').strip()
             if source and title.endswith(' - '+source):
                 title = title[:-len(source)-3]
-            if title and url.startswith(('https://', 'http://')) and time.time()-7*86400 <= stamp <= time.time():
+            aliases = [name, ticker] + ({'TCS': ['Tata Consultancy'], 'SBIN': ['SBI', 'State Bank'], 'AAPL': ['Apple'], 'MSFT': ['Microsoft']}.get(ticker, []))
+            relevant = any(re.search(r'(?<![a-z0-9])'+re.escape(alias.lower())+r'(?![a-z0-9])', title.lower()) for alias in aliases if len(alias)>1)
+            if title and relevant and url.startswith(('https://', 'http://')) and time.time()-7*86400 <= stamp <= time.time():
                 articles.append(dict(headline=title, source=source, url=url, datetime=stamp, summary=''))
         except (ValueError, TypeError, OverflowError):
             continue
@@ -716,6 +767,7 @@ def _google_stock_news(symbol):
 
 
 def get_news(symbol):
+    import re
     """Yahoo company news with an independently retrieved RSS fallback."""
     k = f'news:{symbol}'
     cached = _get(k)
@@ -740,12 +792,14 @@ def get_news(symbol):
             failed = True
     unique = {}
     for article in articles:
-        unique.setdefault(article['headline'].casefold().strip(), article)
+        normalized = re.sub(r'[^a-z0-9]+', ' ', article['headline'].casefold()).strip()
+        unique.setdefault(normalized, article)
     articles = sorted(unique.values(), key=lambda a: a['datetime'], reverse=True)[:12]
     status = 'ready' if articles else 'unavailable' if failed else 'empty'
     data = dict(symbol=symbol, articles=articles, count=len(articles), status=status,
                 provider=provider, fetched_at=datetime.now(timezone.utc).isoformat())
     if status == 'unavailable':
+        note_error('provider_unavailable')
         data['message'] = 'News providers are temporarily unavailable. Please retry shortly.'
     _set(k, data, 900 if articles else 60)
     return data
@@ -819,11 +873,11 @@ def get_candles(symbol, tf="3M"):
                 o = float(row["Open"])
                 h = float(row["High"])
                 l = float(row["Low"])
-                if math.isnan(c) or math.isnan(o) or math.isnan(h) or math.isnan(l):
+                if not all(math.isfinite(v) and v > 0 for v in (c, o, h, l)):
                     continue
                 unix = int(ts.timestamp()) if hasattr(ts, "timestamp") else int(ts.value // 1_000_000_000)
                 v = row.get("Volume", 0)
-                vol = int(v) if v == v and not math.isnan(float(v)) else 0
+                vol = int(v) if math.isfinite(float(v)) else 0
                 candles.append({
                     "time":   unix,
                     "open":   round(o, 2),
@@ -849,7 +903,7 @@ def get_full_dashboard(symbol):
     After fix: _get_ticker_data() is called ONCE → ~1 Yahoo HTTP call total
     (shared across profile, metrics, analyst). Quote uses Twelve Data first.
     """
-    return {
+    data = {
         "symbol":     symbol,
         "profile":    get_profile(symbol),
         "quote":      get_quote(symbol),
@@ -857,6 +911,8 @@ def get_full_dashboard(symbol):
         "analyst":    get_analyst(symbol),
         "fetched_at": datetime.now(timezone.utc).isoformat(),
     }
+    data["data_quality"] = {key: data[key].get("data_quality", {}) for key in ("profile", "quote", "metrics", "analyst")}
+    return data
 
 
 # ── Cache utilities ────────────────────────────────────────────────────────────
@@ -881,3 +937,29 @@ def cache_stats():
             for k, v in _cache.items()
         ]
     return {"entries": len(entries), "keys": entries}
+
+
+_twelve_data_quote = cached('twelve_quote', 900)(_twelve_data_quote)
+_get_ticker_data = cached('yahoo_info')(_get_ticker_data)
+_twelve_data_statistics = cached('twelve_statistics')(_twelve_data_statistics)
+get_profile = cached('profile')(get_profile)
+get_quote = cached('quote')(get_quote)
+get_metrics = cached('metrics')(get_metrics)
+get_analyst = cached('analyst')(get_analyst)
+get_news = cached('news')(get_news)
+
+_legacy_candles = get_candles
+
+def get_candles(symbol, tf='3M'):
+    from market_cache import cache, enabled
+    if not enabled():
+        return _legacy_candles(symbol, tf)
+    def fetch():
+        if tf in {'3M','6M','1Y'}:
+            from market_metrics import daily_candles
+            return daily_candles(symbol, tf)
+        data = _legacy_candles(symbol, tf)
+        if data.get('candles'):
+            data['_observation_date'] = datetime.fromtimestamp(data['candles'][-1]['time'],timezone.utc).date().isoformat()
+        return data
+    return cache.get(symbol, 'candle_'+tf, fetch, 900)

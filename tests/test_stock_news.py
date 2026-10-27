@@ -47,12 +47,25 @@ def test_rss_company_query_dates_and_safe_links(monkeypatch, symbol, name, regio
     def item(title, stamp, url='https://news.google.com/rss/articles/example'):
         date = format_datetime(datetime.fromtimestamp(stamp, timezone.utc))
         return f'<item><title>{escape(title)} - Publisher</title><link>{escape(url)}</link><pubDate>{date}</pubDate><source>Publisher</source></item>'
-    xml = '<rss><channel>' + item('Valid company report', now-3600) + item('Old report', now-8*86400) + item('Future report', now+86400) + item('Unsafe link', now-3600, 'javascript:alert(1)') + '</channel></rss>'
+    xml = '<rss><channel>' + item(name+' report', now-3600) + item('Old report', now-8*86400) + item('Future report', now+86400) + item('Unsafe link', now-3600, 'javascript:alert(1)') + '</channel></rss>'
     def get(url, **kw):
         assert name in kw['params']['q'] and kw['params']['gl'] == region
         assert kw['timeout'] == 6
         return SimpleNamespace(content=xml.encode(), raise_for_status=lambda: None)
     monkeypatch.setattr(service.requests, 'get', get)
     articles = service._google_stock_news(symbol)
-    assert len(articles) == 1 and articles[0]['headline'] == 'Valid company report'
+    assert len(articles) == 1 and articles[0]['headline'] == name+' report'
     assert articles[0]['source'] == 'Publisher'
+
+
+def test_rss_excludes_unrelated_company_and_normalizes_syndicated_titles(monkeypatch):
+    now=service.time.time()
+    def item(title):
+        return '<item><title>'+escape(title)+'</title><link>https://example.com/news</link><pubDate>'+format_datetime(datetime.fromtimestamp(now-100,timezone.utc))+'</pubDate><source>Publisher</source></item>'
+    xml='<rss><channel>'+item('EverestIMS share price')+item('TCS earnings rise')+item('TCS earnings rise —')+'</channel></rss>'
+    monkeypatch.setattr(service.requests,'get',lambda *a,**kw:SimpleNamespace(content=xml.encode(),raise_for_status=lambda:None))
+    articles=service._google_stock_news('TCS.NS')
+    assert len(articles)==2 and all('TCS' in a['headline'] for a in articles)
+    monkeypatch.setattr(service.yf,'Ticker',lambda s:SimpleNamespace(get_news=lambda **kw:[]))
+    result=service.get_news('TCS.NS')
+    assert result['count']==1
