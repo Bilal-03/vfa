@@ -8,6 +8,7 @@ const StockDashboard = (() => {
     let _refreshTimer = null;
     let _chart = null;
     let _currentTF = '3M';
+    let _metricQuality = {};
     let _chartType = 'area'; // 'area' or 'candle'
 
     const $id = id => document.getElementById(id);
@@ -27,7 +28,7 @@ const StockDashboard = (() => {
     };
     const pctOf = v => v == null ? '—' : (parseFloat(v)*100).toFixed(2) + '%';
     const fmtVol = v => {
-        if (!v) return '—';
+        if (v == null) return '—';
         const n = parseInt(v);
         if (n >= 1e7) return (n/1e7).toFixed(2)+'Cr';
         if (n >= 1e5) return (n/1e5).toFixed(2)+'L';
@@ -128,6 +129,8 @@ const StockDashboard = (() => {
     // ── Render ────────────────────────────────────────────────────────────────
     function renderDashboard(data) {
         const { profile, quote, metrics, analyst } = data;
+        const fields = metrics.data_quality?.fields || {};
+        _metricQuality = Object.fromEntries(Object.entries({'Market Cap':'market_cap','PE Ratio':'pe_ratio','52W High':'week52_high','52W Low':'week52_low','ROE':'roe','Beta':'beta','Div Yield':'dividend_yield','Price/Book':'price_to_book','Debt/Equity':'debt_equity'}).map(([label,key])=>[label,fields[key]]));
         const d = $id('stock-dashboard');
         if (!d) return;
 
@@ -170,7 +173,8 @@ const StockDashboard = (() => {
                 ${logoHtml}
             </div>
             <div class="si-header-text">
-                <div class="si-company-name">${profile.name || _symbol}</div>
+                <div class="si-company-name">${newsEsc(profile.name || _symbol)}</div>
+                ${qualityNote(profile.data_quality?.fields?.name)}
                 <div class="si-badges">
                     <span class="si-badge">${_symbol}</span>
                     ${profile.sector ? `<span class="si-badge">${profile.sector}</span>` : ''}
@@ -181,6 +185,7 @@ const StockDashboard = (() => {
                 <div class="si-price-change ${up?'si-up':'si-down'}" id="si-change">
                     ${up?'▲':'▼'} ${Math.abs(quote.change||0).toFixed(2)} (${fmtPct(quote.change_pct)})
                 </div>
+                <div id="si-price-quality">${qualityNote(quote.data_quality?.fields?.current)}</div>
                 <div class="si-live-dot">
                     ${isMarketOpen()
                         ? `<span class="si-dot"></span> Regular trading hours · quotes may be delayed`
@@ -203,7 +208,7 @@ const StockDashboard = (() => {
             ${qi('Day High',   sym+fmt(quote.high), 'si-up')}
             ${qi('Day Low',    sym+fmt(quote.low),  'si-down')}
             ${qi('Volume',     fmtVol(quote.volume))}
-            ${qi('Avg Volume', fmtVol(quote.avg_volume))}
+            ${qi(quote.data_quality?.fields?.avg_volume?.calculation ? '20-session Avg Volume' : 'Avg Volume', fmtVol(quote.avg_volume), '', quote.data_quality?.fields?.avg_volume)}
         </div>
 
         <!-- ── PRICE CHART ── -->
@@ -223,6 +228,7 @@ const StockDashboard = (() => {
                 </div>
             </div>
             <div id="si-chart-container" style="height:320px;width:100%;position:relative;"></div>
+            <div id="si-chart-quality"></div>
         </div>
 
         <!-- ── KEY METRICS ── -->
@@ -273,17 +279,33 @@ const StockDashboard = (() => {
         `;
     }
 
-    function qi(label, val, cls='') {
+    function qualityNote(meta) {
+        if (!meta) return '';
+        const reasons = {permission_denied:'Provider access is unavailable for this data',rate_limited:'Provider request limit reached',timeout:'Provider timed out',missing_coverage:'Provider has not supplied this field',provider_unavailable:'Provider temporarily unavailable',incomplete_52_week_coverage:'A complete 52-week price history is unavailable',history_too_old:'Price history is more than seven days old',incomplete_volume_history:'20 complete volume sessions are unavailable',benchmark_unavailable:'Benchmark history unavailable',insufficient_aligned_history:'At least 120 aligned daily returns are required',zero_benchmark_variance:'Benchmark prices have insufficient variation'};
+        const parts = [];
+        if (meta.freshness === 'unavailable') parts.push(reasons[meta.reason] || 'Data unavailable');
+        else {
+            if (meta.freshness === 'stale' || meta.reason) parts.push('Last available value');
+            parts.push(meta.observation_date ? 'Observed '+meta.observation_date : 'Observation date not supplied');
+        }
+        if (meta.source) parts.push(meta.source);
+        if (meta.fetched_at) parts.push('Retrieved '+new Date(meta.fetched_at).toLocaleString());
+        if (meta.calculation) parts.push(meta.calculation);
+        if (meta.benchmark) parts.push('Benchmark: '+meta.benchmark);
+        return '<p class="sii-small si-data-quality">'+parts.map(newsEsc).join(' · ')+'</p>';
+    }
+
+    function qi(label, val, cls='', meta=null) {
         return `<div class="si-quote-item">
             <div class="si-quote-label">${label}</div>
-            <div class="si-quote-val ${cls}">${val}</div>
+            <div class="si-quote-val ${cls}">${val}</div>${meta ? `<details><summary class="sii-small">Source and date</summary>${qualityNote(meta)}</details>` : ''}
         </div>`;
     }
 
     function mc(label, val, cls='') {
         const help = {'Market Cap':'Total market value of outstanding shares.', 'PE Ratio':'Share price relative to trailing earnings per share; negative earnings can make comparison unhelpful.', '52W High':'Highest quoted price during the past 52 weeks.', '52W Low':'Lowest quoted price during the past 52 weeks.', 'ROE':'Net income relative to shareholder equity; high leverage can increase it.', 'Beta':'Historical sensitivity to a market benchmark; it is not a guaranteed future risk measure.', 'Div Yield':'Annual dividends relative to share price; dividends can change.', 'Price/Book':'Share price relative to book value per share.', 'Debt/Equity':'Debt relative to shareholder equity; interpretation depends on the sector.'};
         return `<div class="si-metric-card">
-            <details><summary class="si-metric-label">${label} ⓘ</summary><p class="sii-small">${help[label]||'Provider-reported financial measure; compare its reporting period and sector context.'}</p></details>
+            <details><summary class="si-metric-label">${label} ⓘ</summary><p class="sii-small">${help[label]||'Provider-reported financial measure; compare its reporting period and sector context.'}</p>${qualityNote(_metricQuality[label])}</details>
             <div class="si-metric-val ${cls}">${val == null ? '—' : val}</div>
         </div>`;
     }
@@ -293,6 +315,9 @@ const StockDashboard = (() => {
         const total = a.total || 0;
         const analystCount = a.analyst_count || 0;
         const consensus = a.consensus || 'N/A';
+        if (!['Strong Buy','Buy','Hold','Sell','Strong Sell'].includes(consensus) && !total) {
+            return '<div class="si-no-ratings"><strong>Analyst ratings unavailable</strong><p>No analyst consensus was supplied. Missing ratings do not mean Hold or Neutral.</p></div>'+qualityNote(a.data_quality?.fields?.consensus || {freshness:'unavailable',reason:a.data_quality?.last_error || 'missing_coverage'});
+        }
 
         const colors = {
             'Strong Buy':  { bg:'#dcfce7', border:'#86efac', text:'#15803d', dot:'#16a34a' },
@@ -387,7 +412,7 @@ const StockDashboard = (() => {
         <!-- Source note -->
         <div class="si-analyst-src">
             <i class="fas fa-circle-info"></i>
-            Data sourced from Yahoo Finance · Wall Street analyst ratings · Updated daily
+            Yahoo Finance analyst data · ${qualityNote(a.data_quality?.fields?.consensus)}
         </div>`;
     }
 
@@ -405,6 +430,8 @@ const StockDashboard = (() => {
                     return;
                 }
                 buildChart(c, data.candles, tf);
+                const note = $id('si-chart-quality');
+                if (note) note.innerHTML = qualityNote(data.data_quality?.fields?.candles);
             })
             .catch(() => { c.innerHTML = '<div class="si-chart-empty">Failed to load chart.</div>'; });
     }
