@@ -1,0 +1,337 @@
+{
+  "RELIANCE": {
+    "symbol": "RELIANCE",
+    "domain": "ril.com",
+    "logo": "https://assets.parqet.com/logos/symbol/RELIANCE.NS"
+  },
+  "TCS": {
+    "symbol": "TCS",
+    "domain": "tcs.com",
+    "logo": "https://assets.parqet.com/logos/symbol/TCS.NS"
+  },
+  "HDFCBANK": {
+    "symbol": "HDFCBANK",
+    "domain": "hdfcbank.com",
+    "logo": "https://assets.parqet.com/logos/symbol/HDFCBANK.NS"
+  },
+  "INFY": {
+    "symbol": "INFY",
+    "domain": "infosys.com",
+    "logo": "https://assets.parqet.com/logos/symbol/INFY.NS"
+  },
+  "ICICIBANK": {
+    "symbol": "ICICIBANK",
+    "domain": "icicibank.com",
+    "logo": "https://assets.parqet.com/logos/symbol/ICICIBANK.NS"
+  },
+  "HINDUNILVR": {
+    "symbol": "HINDUNILVR",
+    "domain": "hul.co.in",
+    "logo": "https://assets.parqet.com/logos/symbol/HINDUNILVR.NS"
+  },
+  "SBIN": {
+    "symbol": "SBIN",
+    "domain": "sbi.co.in",
+    "logo": "https://assets.parqet.com/logos/symbol/SBIN.NS"
+  },
+  "BHARTIARTL": {
+    "symbol": "BHARTIARTL",
+    "domain": "airtel.com",
+    "logo": "https://assets.parqet.com/logos/symbol/BHARTIARTL.NS"
+  },
+  "BAJFINANCE": {
+    "symbol": "BAJFINANCE",
+    "domain": "bajajfinserv.in",
+    "logo": "https://assets.parqet.com/logos/symbol/BAJFINANCE.NS"
+  },
+  "ASIANPAINT": {
+    "symbol": "ASIANPAINT",
+    "domain": "asianpaints.com",
+    "logo": "https://assets.parqet.com/logos/symbol/ASIANPAINT.NS"
+  },
+  "MARUTI": {
+    "symbol": "MARUTI",
+    "domain": "marutisuzuki.com",
+    "logo": "https://assets.parqet.com/logos/symbol/MARUTI.NS"
+  },
+  "KOTAKBANK": {
+    "symbol": "KOTAKBANK",
+    "domain": "kotak.com",
+    "logo": "https://assets.parqet.com/logos/symbol/KOTAKBANK.NS"
+  },
+  "LT": {
+    "symbol": "LT",
+    "domain": "larsentoubro.com",
+    "logo": "https://assets.parqet.com/logos/symbol/LT.NS"
+  },
+  "AXISBANK": {
+    "symbol": "AXISBANK",
+    "domain": "axisbank.com",
+    "logo": "https://assets.parqet.com/logos/symbol/AXISBANK.NS"
+  },
+  "TITAN": {
+    "symbol": "TITAN",
+    "domain": "titancompany.in",
+    "logo": "https://assets.parqet.com/logos/symbol/TITAN.NS"
+  },
+  "SUNPHARMA": {
+    "symbol": "SUNPHARMA",
+    "domain": "sunpharma.com",
+    "logo": "https://assets.parqet.com/logos/symbol/SUNPHARMA.NS"
+  },
+  "WIPRO": {
+    "symbol": "WIPRO",
+    "domain": "wipro.com",
+    "logo": "https://assets.parqet.com/logos/symbol/WIPRO.NS"
+  },
+  "HCLTECH": {
+    "symbol": "HCLTECH",
+    "domain": "hcltech.com",
+    "logo": "https://assets.parqet.com/logos/symbol/HCLTECH.NS"
+  },
+  "TATAMOTORS": {
+    "symbol": "TATAMOTORS",
+    "domain": "tatamotors.com",
+    "logo": "https://assets.parqet.com/logos/symbol/TATAMOTORS.NS"
+  },
+  "ONGC": {
+    "symbol": "ONGC",
+    "domain": "ongcindia.com",
+    "logo": "https://assets.parqet.com/logos/symbol/ONGC.NS"
+  },
+  "NTPC": {
+    "symbol": "NTPC",
+    "domain": "ntpc.co.in",
+    "logo": "https://assets.parqet.com/logos/symbol/NTPC.NS"
+  },
+  "POWERGRID": {
+    "symbol": "POWERGRID",
+    "domain": "powergridindia.com",
+    "logo": "https://assets.parqet.com/logos/symbol/POWERGRID.NS"
+  },
+  "JSWSTEEL": {
+    "symbol": "JSWSTEEL",
+    "domain": "jsw.in",
+    "logo": "https://assets.parqet.com/logos/symbol/JSWSTEEL.NS"
+  },
+  "ADANIENT": {
+    "symbol": "ADANIENT",
+    "domain": "adani.com",
+    "logo": "https://assets.parqet.com/logos/symbol/ADANIENT.NS"
+  },
+  "ADANIPORTS": {
+    "symbol": "ADANIPORTS",
+    "domain": "adaniports.com",
+    "logo": "https://assets.parqet.com/logos/symbol/ADANIPORTS.NS"
+  },
+  "COALINDIA": {
+    "symbol": "COALINDIA",
+    "domain": "coalindia.in",
+    "logo": "https://assets.parqet.com/logos/symbol/COALINDIA.NS"
+  },
+  "TECHM": {
+    "symbol": "TECHM",
+    "domain": "techmahindra.com",
+    "logo": "https://assets.parqet.com/logos/symbol/TECHM.NS"
+  },
+  "TATASTEEL": {
+    "symbol": "TATASTEEL",
+    "domain": "tatasteel.com",
+    "logo": "https://assets.parqet.com/logos/symbol/TATASTEEL.NS"
+  },
+  "HINDALCO": {
+    "symbol": "HINDALCO",
+    "domain": "hindalco.com",
+    "logo": "https://assets.parqet.com/logos/symbol/HINDALCO.NS"
+  },
+  "CIPLA": {
+    "symbol": "CIPLA",
+    "domain": "cipla.com",
+    "logo": "https://assets.parqet.com/logos/symbol/CIPLA.NS"
+  },
+  "DRREDDY": {
+    "symbol": "DRREDDY",
+    "domain": "drreddys.com",
+    "logo": "https://assets.parqet.com/logos/symbol/DRREDDY.NS"
+  },
+  "BRITANNIA": {
+    "symbol": "BRITANNIA",
+    "domain": "britannia.co.in",
+    "logo": "https://assets.parqet.com/logos/symbol/BRITANNIA.NS"
+  },
+  "APOLLOHOSP": {
+    "symbol": "APOLLOHOSP",
+    "domain": "apollohospitals.com",
+    "logo": "https://assets.parqet.com/logos/symbol/APOLLOHOSP.NS"
+  },
+  "SBILIFE": {
+    "symbol": "SBILIFE",
+    "domain": "sbilife.co.in",
+    "logo": "https://assets.parqet.com/logos/symbol/SBILIFE.NS"
+  },
+  "HEROMOTOCO": {
+    "symbol": "HEROMOTOCO",
+    "domain": "heromotocorp.com",
+    "logo": "https://assets.parqet.com/logos/symbol/HEROMOTOCO.NS"
+  },
+  "BPCL": {
+    "symbol": "BPCL",
+    "domain": "bharatpetroleum.com",
+    "logo": "https://assets.parqet.com/logos/symbol/BPCL.NS"
+  },
+  "SUZLON": {
+    "symbol": "SUZLON",
+    "domain": "suzlon.com",
+    "logo": "https://assets.parqet.com/logos/symbol/SUZLON.NS"
+  },
+  "ZOMATO": {
+    "symbol": "ZOMATO",
+    "domain": "zomato.com",
+    "logo": "https://assets.parqet.com/logos/symbol/ZOMATO.NS"
+  },
+  "PAYTM": {
+    "symbol": "PAYTM",
+    "domain": "paytm.com",
+    "logo": "https://assets.parqet.com/logos/symbol/PAYTM.NS"
+  },
+  "NYKAA": {
+    "symbol": "NYKAA",
+    "domain": "nykaa.com",
+    "logo": "https://assets.parqet.com/logos/symbol/NYKAA.NS"
+  },
+  "DLF": {
+    "symbol": "DLF",
+    "domain": "dlf.in",
+    "logo": "https://assets.parqet.com/logos/symbol/DLF.NS"
+  },
+  "DMART": {
+    "symbol": "DMART",
+    "domain": "dmartindia.com",
+    "logo": "https://assets.parqet.com/logos/symbol/DMART.NS"
+  },
+  "IRCTC": {
+    "symbol": "IRCTC",
+    "domain": "irctc.co.in",
+    "logo": "https://assets.parqet.com/logos/symbol/IRCTC.NS"
+  },
+  "HAL": {
+    "symbol": "HAL",
+    "domain": "hal-india.co.in",
+    "logo": "https://assets.parqet.com/logos/symbol/HAL.NS"
+  },
+  "IRFC": {
+    "symbol": "IRFC",
+    "domain": "irfc.nic.in",
+    "logo": "https://assets.parqet.com/logos/symbol/IRFC.NS"
+  },
+  "LUPIN": {
+    "symbol": "LUPIN",
+    "domain": "lupin.com",
+    "logo": "https://assets.parqet.com/logos/symbol/LUPIN.NS"
+  },
+  "AUROPHARMA": {
+    "symbol": "AUROPHARMA",
+    "domain": "aurobindo.com",
+    "logo": "https://assets.parqet.com/logos/symbol/AUROPHARMA.NS"
+  },
+  "HAVELLS": {
+    "symbol": "HAVELLS",
+    "domain": "havells.com",
+    "logo": "https://assets.parqet.com/logos/symbol/HAVELLS.NS"
+  },
+  "VOLTAS": {
+    "symbol": "VOLTAS",
+    "domain": "voltas.com",
+    "logo": "https://assets.parqet.com/logos/symbol/VOLTAS.NS"
+  },
+  "JUBLFOOD": {
+    "symbol": "JUBLFOOD",
+    "domain": "jubilantfoodworks.com",
+    "logo": "https://assets.parqet.com/logos/symbol/JUBLFOOD.NS"
+  },
+  "ITC": {
+    "symbol": "ITC",
+    "domain": "itcportal.com",
+    "logo": "https://assets.parqet.com/logos/symbol/ITC.NS"
+  },
+  "AAPL": {
+    "symbol": "AAPL",
+    "domain": "apple.com",
+    "logo": "https://assets.parqet.com/logos/symbol/AAPL"
+  },
+  "MSFT": {
+    "symbol": "MSFT",
+    "domain": "microsoft.com",
+    "logo": "https://assets.parqet.com/logos/symbol/MSFT"
+  },
+  "GOOGL": {
+    "symbol": "GOOGL",
+    "domain": "google.com",
+    "logo": "https://assets.parqet.com/logos/symbol/GOOGL"
+  },
+  "GOOG": {
+    "symbol": "GOOG",
+    "domain": "google.com",
+    "logo": "https://assets.parqet.com/logos/symbol/GOOG"
+  },
+  "AMZN": {
+    "symbol": "AMZN",
+    "domain": "amazon.com",
+    "logo": "https://assets.parqet.com/logos/symbol/AMZN"
+  },
+  "META": {
+    "symbol": "META",
+    "domain": "meta.com",
+    "logo": "https://assets.parqet.com/logos/symbol/META"
+  },
+  "TSLA": {
+    "symbol": "TSLA",
+    "domain": "tesla.com",
+    "logo": "https://assets.parqet.com/logos/symbol/TSLA"
+  },
+  "NVDA": {
+    "symbol": "NVDA",
+    "domain": "nvidia.com",
+    "logo": "https://assets.parqet.com/logos/symbol/NVDA"
+  },
+  "NFLX": {
+    "symbol": "NFLX",
+    "domain": "netflix.com",
+    "logo": "https://assets.parqet.com/logos/symbol/NFLX"
+  },
+  "AMD": {
+    "symbol": "AMD",
+    "domain": "amd.com",
+    "logo": "https://assets.parqet.com/logos/symbol/AMD"
+  },
+  "INTC": {
+    "symbol": "INTC",
+    "domain": "intel.com",
+    "logo": "https://assets.parqet.com/logos/symbol/INTC"
+  },
+  "JPM": {
+    "symbol": "JPM",
+    "domain": "jpmorganchase.com",
+    "logo": "https://assets.parqet.com/logos/symbol/JPM"
+  },
+  "BAC": {
+    "symbol": "BAC",
+    "domain": "bankofamerica.com",
+    "logo": "https://assets.parqet.com/logos/symbol/BAC"
+  },
+  "V": {
+    "symbol": "V",
+    "domain": "visa.com",
+    "logo": "https://assets.parqet.com/logos/symbol/V"
+  },
+  "WMT": {
+    "symbol": "WMT",
+    "domain": "walmart.com",
+    "logo": "https://assets.parqet.com/logos/symbol/WMT"
+  },
+  "DIS": {
+    "symbol": "DIS",
+    "domain": "thewaltdisneycompany.com",
+    "logo": "https://assets.parqet.com/logos/symbol/DIS"
+  }
+}

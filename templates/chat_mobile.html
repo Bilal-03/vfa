@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-portfolio-storage="{{ portfolio_storage|default('supabase') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -81,6 +81,7 @@
     vertical-align: middle;
 }
     </style>
+<link rel="stylesheet" href="{{ url_for('static', filename='stock_dashboard.css') }}">
 </head>
 <body>
 
@@ -483,7 +484,8 @@
             </div>
         </div>
         <div id="pt-summary-bar"></div>
-        <div id="pt-content" style="padding:0 0 100px;"></div>
+        {% if portfolio_storage == 'sqlite' %}<p style="padding:10px 16px;color:#64748b;font-size:12px;">Laptop storage · holdings stay on this computer.</p>{% endif %}
+<div id="pt-content" style="padding:0 0 100px;"></div>
     </div>
 
     <!-- ════════════════════════════════════════════
@@ -1754,6 +1756,7 @@ window.showToast = function(msg, type = 'success') {
 };
 </script>
 
+<script src="{{ url_for('static', filename='stock_insights.js') }}"></script>
 <script src="{{ url_for('static', filename='stock_dashboard.js') }}"></script>
 <script src="{{ url_for('static', filename='portfolio_watchlist_mobile.js') }}"></script>
 
@@ -1850,6 +1853,18 @@ function closeHamOnBackdrop(e) {
         closeHamMenu();
     }
 }
+
+// ── Mobile App Scope Configuration: 100% Production ──
+function getReviewMode() {
+    return 'full';
+}
+function showMilestoneModalMobile() {}
+function closeReview4ModalMobile() {}
+function setMobileReviewMode() {}
+
+window.addEventListener('DOMContentLoaded', () => {
+    localStorage.setItem('finassist_review_mode', 'full');
+});
 </script>
 
 </body>

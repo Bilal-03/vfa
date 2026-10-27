@@ -165,69 +165,91 @@ def _get_ticker_data(symbol):
 
 
 # ── Logo helper ────────────────────────────────────────────────────────────────
+KNOWN_DOMAINS = {
+    "RELIANCE": "ril.com",        "RELIANCE.NS": "ril.com",
+    "TCS":      "tcs.com",        "TCS.NS":      "tcs.com",
+    "HDFCBANK": "hdfcbank.com",   "HDFCBANK.NS": "hdfcbank.com",
+    "INFY":     "infosys.com",    "INFY.NS":     "infosys.com",
+    "ICICIBANK":"icicibank.com",  "ICICIBANK.NS":"icicibank.com",
+    "HINDUNILVR":"hul.co.in",     "HINDUNILVR.NS":"hul.co.in",
+    "SBIN":     "sbi.co.in",      "SBIN.NS":     "sbi.co.in",
+    "BHARTIARTL":"airtel.com",    "BHARTIARTL.NS":"airtel.com",
+    "BAJFINANCE":"bajajfinserv.in","BAJFINANCE.NS":"bajajfinserv.in",
+    "ASIANPAINT":"asianpaints.com","ASIANPAINT.NS":"asianpaints.com",
+    "MARUTI":   "marutisuzuki.com","MARUTI.NS":  "marutisuzuki.com",
+    "KOTAKBANK":"kotak.com",      "KOTAKBANK.NS":"kotak.com",
+    "LT":       "larsentoubro.com","LT.NS":       "larsentoubro.com",
+    "AXISBANK": "axisbank.com",   "AXISBANK.NS": "axisbank.com",
+    "TITAN":    "titancompany.in","TITAN.NS":    "titancompany.in",
+    "SUNPHARMA":"sunpharma.com",  "SUNPHARMA.NS":"sunpharma.com",
+    "WIPRO":    "wipro.com",      "WIPRO.NS":    "wipro.com",
+    "HCLTECH":  "hcltech.com",    "HCLTECH.NS":  "hcltech.com",
+    "TATAMOTORS":"tatamotors.com","TATAMOTORS.NS":"tatamotors.com",
+    "ONGC":     "ongcindia.com",  "ONGC.NS":     "ongcindia.com",
+    "NTPC":     "ntpc.co.in",     "NTPC.NS":     "ntpc.co.in",
+    "POWERGRID":"powergridindia.com","POWERGRID.NS":"powergridindia.com",
+    "JSWSTEEL": "jsw.in",         "JSWSTEEL.NS": "jsw.in",
+    "ADANIENT": "adani.com",      "ADANIENT.NS": "adani.com",
+    "ADANIPORTS":"adaniports.com","ADANIPORTS.NS":"adaniports.com",
+    "COALINDIA":"coalindia.in",   "COALINDIA.NS":"coalindia.in",
+    "TECHM":    "techmahindra.com","TECHM.NS":   "techmahindra.com",
+    "TATASTEEL":"tatasteel.com",  "TATASTEEL.NS":"tatasteel.com",
+    "HINDALCO": "hindalco.com",   "HINDALCO.NS": "hindalco.com",
+    "CIPLA":    "cipla.com",      "CIPLA.NS":    "cipla.com",
+    "DRREDDY":  "drreddys.com",   "DRREDDY.NS":  "drreddys.com",
+    "BRITANNIA":"britannia.co.in","BRITANNIA.NS":"britannia.co.in",
+    "APOLLOHOSP":"apollohospitals.com","APOLLOHOSP.NS":"apollohospitals.com",
+    "SBILIFE":  "sbilife.co.in",  "SBILIFE.NS":  "sbilife.co.in",
+    "HEROMOTOCO":"heromotocorp.com","HEROMOTOCO.NS":"heromotocorp.com",
+    "BPCL":     "bharatpetroleum.com","BPCL.NS": "bharatpetroleum.com",
+    "SUZLON":   "suzlon.com",     "SUZLON.NS":   "suzlon.com",
+    "ZOMATO":   "zomato.com",     "ZOMATO.NS":   "zomato.com",
+    "PAYTM":    "paytm.com",      "PAYTM.NS":    "paytm.com",
+    "NYKAA":    "nykaa.com",      "NYKAA.NS":    "nykaa.com",
+    "DLF":      "dlf.in",         "DLF.NS":      "dlf.in",
+    "DMART":    "dmartindia.com", "DMART.NS":    "dmartindia.com",
+    "IRCTC":    "irctc.co.in",    "IRCTC.NS":    "irctc.co.in",
+    "HAL":      "hal-india.co.in","HAL.NS":      "hal-india.co.in",
+    "IRFC":     "irfc.nic.in",    "IRFC.NS":     "irfc.nic.in",
+    "LUPIN":    "lupin.com",      "LUPIN.NS":    "lupin.com",
+    "AUROPHARMA":"aurobindo.com", "AUROPHARMA.NS":"aurobindo.com",
+    "HAVELLS":  "havells.com",    "HAVELLS.NS":  "havells.com",
+    "VOLTAS":   "voltas.com",     "VOLTAS.NS":   "voltas.com",
+    "JUBLFOOD": "jubilantfoodworks.com","JUBLFOOD.NS":"jubilantfoodworks.com",
+    "ITC":      "itcportal.com",  "ITC.NS":      "itcportal.com",
+    "AAPL":     "apple.com",      "MSFT":        "microsoft.com",
+    "GOOGL":    "google.com",     "GOOG":        "google.com",
+    "AMZN":     "amazon.com",     "META":        "meta.com",
+    "TSLA":     "tesla.com",      "NVDA":        "nvidia.com",
+    "NFLX":     "netflix.com",    "AMD":         "amd.com",
+    "INTC":     "intel.com",      "JPM":         "jpmorganchase.com",
+    "BAC":      "bankofamerica.com", "V":        "visa.com",
+    "WMT":      "walmart.com",    "DIS":         "thewaltdisneycompany.com",
+}
+
+US_KNOWN_TICKERS = {
+    "AAPL", "MSFT", "GOOGL", "GOOG", "AMZN", "META", "TSLA", "NVDA", "NFLX", "AMD",
+    "INTC", "JPM", "BAC", "V", "MA", "WMT", "DIS", "UBER", "LYFT", "SNAP", "IBM",
+    "ORCL", "CRM", "ADBE", "NOW", "PYPL", "SQ", "COIN", "HOOD", "SHOP", "SPOT",
+    "ZM", "DOCU", "PLTR", "RBLX", "ABNB", "DASH", "RIVN", "LCID", "F", "GM",
+    "GE", "BA", "CAT", "XOM", "CVX", "PFE", "JNJ", "MRK", "ABBV", "LLY", "UNH",
+    "AMGN", "GILD", "MRNA", "GS", "MS", "C", "WFC", "AXP", "COF", "SCHW", "BLK",
+    "KO", "PEP", "MCD", "SBUX", "NKE", "LULU", "TGT", "HD", "LOW", "COST", "ETSY", "EBAY"
+}
+
 def _get_logo(symbol, website=None):
-    from urllib.parse import urlparse
+    clean = symbol.upper().strip()
+    if clean.endswith(".BO"):
+        parqet_sym = clean.replace(".BO", ".NS")
+    elif clean.endswith(".NS"):
+        parqet_sym = clean
+    elif clean in US_KNOWN_TICKERS:
+        parqet_sym = clean
+    else:
+        # Default Indian stock without suffix
+        parqet_sym = f"{clean}.NS"
 
-    KNOWN_DOMAINS = {
-        "RELIANCE": "ril.com",        "RELIANCE.NS": "ril.com",
-        "TCS":      "tcs.com",        "TCS.NS":      "tcs.com",
-        "HDFCBANK": "hdfcbank.com",   "HDFCBANK.NS": "hdfcbank.com",
-        "INFY":     "infosys.com",    "INFY.NS":     "infosys.com",
-        "ICICIBANK":"icicibank.com",  "ICICIBANK.NS":"icicibank.com",
-        "HINDUNILVR":"hul.co.in",     "SBIN":        "sbi.co.in",
-        "BHARTIARTL":"airtel.com",    "BHARTIARTL.NS":"airtel.com",
-        "BAJFINANCE":"bajajfinserv.in",
-        "ASIANPAINT":"asianpaints.com",
-        "MARUTI":   "marutisuzuki.com","MARUTI.NS":  "marutisuzuki.com",
-        "KOTAKBANK":"kotak.com",      "LT":          "larsentoubro.com",
-        "AXISBANK": "axisbank.com",   "TITAN":       "titancompany.in",
-        "SUNPHARMA":"sunpharma.com",  "WIPRO":       "wipro.com",
-        "HCLTECH":  "hcltech.com",    "TATAMOTORS":  "tatamotors.com",
-        "ONGC":     "ongcindia.com",  "NTPC":        "ntpc.co.in",
-        "POWERGRID":"powergridindia.com",
-        "JSWSTEEL": "jsw.in",         "ADANIENT":    "adani.com",
-        "ADANIPORTS":"adaniports.com",
-        "COALINDIA":"coalindia.in",   "TECHM":       "techmahindra.com",
-        "TATASTEEL":"tatasteel.com",  "HINDALCO":    "hindalco.com",
-        "CIPLA":    "cipla.com",      "DRREDDY":     "drreddys.com",
-        "BRITANNIA":"britannia.co.in",
-        "APOLLOHOSP":"apollohospitals.com",
-        "SBILIFE":  "sbilife.co.in",  "HEROMOTOCO":  "heromotocorp.com",
-        "BPCL":     "bharatpetroleum.com",
-        "SUZLON":   "suzlon.com",     "SUZLON.NS":   "suzlon.com",
-        "ZOMATO":   "zomato.com",     "PAYTM":       "paytm.com",
-        "NYKAA":    "nykaa.com",      "DLF":         "dlf.in",
-        "DMART":    "dmartindia.com", "IRCTC":       "irctc.co.in",
-        "HAL":      "hal-india.co.in","IRFC":        "irfc.nic.in",
-        "LUPIN":    "lupin.com",      "AUROPHARMA":  "aurobindo.com",
-        "HAVELLS":  "havells.com",    "VOLTAS":      "voltas.com",
-        "JUBLFOOD":  "jubilantfoodworks.com",
-        "ITC":      "itcportal.com",  "NTPC.NS":     "ntpc.co.in",
-        "AAPL":  "apple.com",    "MSFT":  "microsoft.com",
-        "GOOGL": "google.com",   "GOOG":  "google.com",
-        "AMZN":  "amazon.com",   "META":  "meta.com",
-        "TSLA":  "tesla.com",    "NVDA":  "nvidia.com",
-        "NFLX":  "netflix.com",  "AMD":   "amd.com",
-        "INTC":  "intel.com",    "JPM":   "jpmorganchase.com",
-        "BAC":   "bankofamerica.com", "V": "visa.com",
-        "WMT":   "walmart.com",  "DIS":   "thewaltdisneycompany.com",
-    }
-
-    domain = None
-    if website:
-        try:
-            parsed = urlparse(website)
-            domain = parsed.netloc.replace("www.", "").strip("/")
-        except Exception:
-            pass
-
-    clean = symbol.upper().replace(".BO", "")
-    if not domain:
-        domain = KNOWN_DOMAINS.get(clean) or KNOWN_DOMAINS.get(clean.replace(".NS", ""))
-
-    if domain:
-        return f"https://logo.clearbit.com/{domain}"
-    return ""
+    return f"https://assets.parqet.com/logos/symbol/{parqet_sym}"
 
 
 # ── Public API ─────────────────────────────────────────────────────────────────
@@ -256,9 +278,8 @@ def get_profile(symbol):
         except Exception:
             pass
     if not logo_domain:
-        # Try to derive domain from the Clearbit logo URL we just built
-        if logo and "clearbit.com" in logo:
-            logo_domain = logo.replace("https://logo.clearbit.com/", "")
+        clean_key = symbol.upper().replace(".BO", "").replace(".NS", "")
+        logo_domain = KNOWN_DOMAINS.get(clean_key) or KNOWN_DOMAINS.get(symbol.upper())
 
     data = {
         "symbol":      info.get("symbol", symbol),
@@ -517,6 +538,11 @@ def get_metrics(symbol):
                     return r
             return None
 
+        # Derive a fractional yield from explicit annual cash dividend and price.
+        # Yahoo's dividendYield field may use percentage points and is ambiguous.
+        annual_dividend = _safe(info.get("dividendRate"), 6)
+        dividend_price = _safe(info.get("currentPrice") or info.get("regularMarketPrice"), 6)
+        derived_yield = annual_dividend / dividend_price if annual_dividend is not None and dividend_price and dividend_price > 0 else None
         data = {
             "symbol":            symbol,
             # PE / valuation
@@ -539,7 +565,7 @@ def get_metrics(symbol):
             "current_ratio":     first(tds.get("current_ratio"),      info.get("currentRatio")),
             "quick_ratio":       _safe(info.get("quickRatio")),
             # Income / dividends
-            "dividend_yield":    first(tds.get("dividend_yield"),     info.get("dividendYield")),
+            "dividend_yield":    first(derived_yield, _safe(info.get("trailingAnnualDividendYield"), 6), tds.get("dividend_yield")),
             # 52-week range: TD stats → fast_info → .info
             "week52_high":       first(tds.get("week52_high"),        fi_data.get("week52_high"),  info.get("fiftyTwoWeekHigh")),
             "week52_low":        first(tds.get("week52_low"),         fi_data.get("week52_low"),   info.get("fiftyTwoWeekLow")),
@@ -611,54 +637,116 @@ def get_analyst(symbol):
         return {"error": str(e)}
 
 
-def get_news(symbol):
-    """Fetch news. TTL 900 s (15 min) — was 300 s (5 min). 3x fewer Yahoo calls."""
-    k = f"news:{symbol}"
-    c = _get(k)
-    if c:
-        return c
-    try:
-        raw = yf.Ticker(symbol).news or []
-        articles = []
-        for a in raw[:12]:
-            try:
-                if "content" in a:
-                    content  = a["content"]
-                    headline = content.get("title", "") or a.get("title", "")
-                    pub      = content.get("provider", {})
-                    source   = pub.get("displayName", pub.get("name", "")) if isinstance(pub, dict) else str(pub)
-                    canonical = content.get("canonicalUrl", {})
-                    url  = canonical.get("url", "") if isinstance(canonical, dict) else content.get("url", "")
-                    if not url:
-                        url = a.get("link", "")
-                    pub_date = content.get("pubDate", "") or content.get("publishedAt", "")
-                    if pub_date:
-                        try:
-                            from datetime import datetime as _dt
-                            unix_time = int(_dt.fromisoformat(pub_date.replace("Z", "+00:00")).timestamp())
-                        except:
-                            unix_time = 0
-                    else:
+def _parse_yahoo_news(raw):
+    articles = []
+    for a in raw[:12]:
+        try:
+            if "content" in a:
+                content  = a["content"]
+                headline = content.get("title", "") or a.get("title", "")
+                pub      = content.get("provider", {})
+                source   = pub.get("displayName", pub.get("name", "")) if isinstance(pub, dict) else str(pub)
+                canonical = content.get("canonicalUrl", {})
+                url  = canonical.get("url", "") if isinstance(canonical, dict) else content.get("url", "")
+                if not url:
+                    url = a.get("link", "")
+                pub_date = content.get("pubDate", "") or content.get("publishedAt", "")
+                if pub_date:
+                    try:
+                        from datetime import datetime as _dt
+                        unix_time = int(_dt.fromisoformat(pub_date.replace("Z", "+00:00")).timestamp())
+                    except:
                         unix_time = 0
-                    summary = content.get("summary", "") or content.get("description", "")
                 else:
-                    headline  = a.get("title", "")
-                    source    = a.get("publisher", "")
-                    url       = a.get("link", "")
-                    unix_time = a.get("providerPublishTime", 0)
-                    summary   = a.get("summary", "")
+                    unix_time = 0
+                summary = content.get("summary", "") or content.get("description", "")
+            else:
+                headline  = a.get("title", "")
+                source    = a.get("publisher", "")
+                url       = a.get("link", "")
+                unix_time = a.get("providerPublishTime", 0)
+                summary   = a.get("summary", "")
 
-                if headline:
-                    articles.append({"headline": headline, "source": source,
-                                     "url": url, "datetime": unix_time, "summary": summary})
-            except Exception:
-                continue
+            if headline:
+                articles.append({"headline": headline, "source": source,
+                                 "url": url, "datetime": unix_time, "summary": summary})
+        except Exception:
+            continue
 
-        data = {"symbol": symbol, "articles": articles, "count": len(articles)}
-        _set(k, data, 900)   # 15 min — was 5 min
-        return data
-    except Exception as e:
-        return {"error": str(e), "articles": []}
+    return articles
+
+
+def _google_stock_news(symbol):
+    """Company-specific RSS search; only dated links from the preceding seven days."""
+    import re
+    import xml.etree.ElementTree as ET
+    from email.utils import parsedate_to_datetime
+    names = {'TCS': 'Tata Consultancy Services', 'INFY': 'Infosys',
+             'SBIN': 'State Bank of India', 'AAPL': 'Apple',
+             'MSFT': 'Microsoft', 'NVDA': 'Nvidia'}
+    ticker = symbol.removesuffix('.NS').removesuffix('.BO')
+    profile = _get(f'profile:{symbol}') or {}
+    info = (_get(f'ticker_data:{symbol}') or {}).get('info', {})
+    name = names.get(ticker) or profile.get('name') or info.get('longName') or ticker
+    name = re.sub(r'\b(Limited|Ltd\.?|Inc\.?|Corporation|Corp\.?)\b', '', name, flags=re.I).strip(' ,.')
+    india = _symbol_currency(symbol) == 'INR'
+    response = requests.get('https://news.google.com/rss/search', params={
+        'q': f'"{name}" stock when:7d', 'hl': 'en-IN' if india else 'en-US',
+        'gl': 'IN' if india else 'US', 'ceid': 'IN:en' if india else 'US:en',
+    }, timeout=6, headers={'User-Agent': 'FinAssist/1.0'})
+    response.raise_for_status()
+    if len(response.content) > 2_000_000:
+        raise ValueError('News response exceeds size limit')
+    articles = []
+    for item in ET.fromstring(response.content).findall('./channel/item'):
+        try:
+            stamp = int(parsedate_to_datetime(item.findtext('pubDate', '')).timestamp())
+            title = item.findtext('title', '').strip()
+            url = item.findtext('link', '').strip()
+            source = item.findtext('source', '').strip()
+            if source and title.endswith(' - '+source):
+                title = title[:-len(source)-3]
+            if title and url.startswith(('https://', 'http://')) and time.time()-7*86400 <= stamp <= time.time():
+                articles.append(dict(headline=title, source=source, url=url, datetime=stamp, summary=''))
+        except (ValueError, TypeError, OverflowError):
+            continue
+    return articles
+
+
+def get_news(symbol):
+    """Yahoo company news with an independently retrieved RSS fallback."""
+    k = f'news:{symbol}'
+    cached = _get(k)
+    if cached is not None:
+        return cached
+    failed = False
+    try:
+        articles = _parse_yahoo_news(yf.Ticker(symbol).get_news(count=12, tab='news') or [])
+        articles = [a for a in articles if a['url'].startswith(('https://', 'http://'))
+                    and isinstance(a['datetime'], (int, float))
+                    and time.time()-7*86400 <= a['datetime'] <= time.time()]
+    except Exception:
+        articles = []
+        failed = True
+    provider = 'Yahoo Finance'
+    if not articles:
+        try:
+            articles = _google_stock_news(symbol)
+            provider = 'Google News RSS'
+            failed = False
+        except Exception:
+            failed = True
+    unique = {}
+    for article in articles:
+        unique.setdefault(article['headline'].casefold().strip(), article)
+    articles = sorted(unique.values(), key=lambda a: a['datetime'], reverse=True)[:12]
+    status = 'ready' if articles else 'unavailable' if failed else 'empty'
+    data = dict(symbol=symbol, articles=articles, count=len(articles), status=status,
+                provider=provider, fetched_at=datetime.now(timezone.utc).isoformat())
+    if status == 'unavailable':
+        data['message'] = 'News providers are temporarily unavailable. Please retry shortly.'
+    _set(k, data, 900 if articles else 60)
+    return data
 
 
 # ── Candle helpers ─────────────────────────────────────────────────────────────
@@ -705,23 +793,42 @@ def get_candles(symbol, tf="3M"):
         interval = _TF_INTERVAL.get(tf, "1d")
         start, end = _tf_dates(tf)
         ticker = yf.Ticker(symbol)
-        hist   = ticker.history(period="max", interval=interval) if start is None \
-                 else ticker.history(start=start, end=end, interval=interval)
+        if tf == "5Y":
+            hist = ticker.history(period="5y", interval="1wk")
+        elif tf == "MAX":
+            hist = ticker.history(period="max", interval="1mo")
+        else:
+            hist = ticker.history(period="max", interval=interval) if start is None \
+                   else ticker.history(start=start, end=end, interval=interval)
 
         if hist.empty:
             return {"error": "No chart data"}
 
+        # Drop any rows with NaN in core price series
+        hist = hist.dropna(subset=["Open", "High", "Low", "Close"])
+        if hist.empty:
+            return {"error": "No chart data"}
+
+        import math
         candles = []
         for ts, row in hist.iterrows():
             try:
+                c = float(row["Close"])
+                o = float(row["Open"])
+                h = float(row["High"])
+                l = float(row["Low"])
+                if math.isnan(c) or math.isnan(o) or math.isnan(h) or math.isnan(l):
+                    continue
                 unix = int(ts.timestamp()) if hasattr(ts, "timestamp") else int(ts.value // 1_000_000_000)
+                v = row.get("Volume", 0)
+                vol = int(v) if v == v and not math.isnan(float(v)) else 0
                 candles.append({
                     "time":   unix,
-                    "open":   round(float(row["Open"]),   2),
-                    "high":   round(float(row["High"]),   2),
-                    "low":    round(float(row["Low"]),    2),
-                    "close":  round(float(row["Close"]),  2),
-                    "volume": int(row["Volume"]) if row["Volume"] == row["Volume"] else 0,
+                    "open":   round(o, 2),
+                    "high":   round(h, 2),
+                    "low":    round(l, 2),
+                    "close":  round(c, 2),
+                    "volume": vol,
                 })
             except Exception:
                 pass

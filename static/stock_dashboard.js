@@ -11,9 +11,11 @@ const StockDashboard = (() => {
     let _chartType = 'area'; // 'area' or 'candle'
 
     const $id = id => document.getElementById(id);
+    const newsEsc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const fmt = (v, d=2) => v == null ? '—' : parseFloat(v).toLocaleString('en-IN', {minimumFractionDigits:d, maximumFractionDigits:d});
     const fmtPct = v => v == null ? '—' : (v>=0?'+':'') + parseFloat(v).toFixed(2) + '%';
-    const fmtLarge = v => {
+    const fmtLarge = (v, currency='INR') => {
+        if (currency==='USD') return v==null?'—':'$'+Intl.NumberFormat('en-US',{notation:'compact',maximumFractionDigits:2}).format(v);
         if (v == null) return '—';
         const n = Math.abs(parseFloat(v));
         const sign = parseFloat(v) < 0 ? '-' : '';
@@ -32,6 +34,7 @@ const StockDashboard = (() => {
         if (n >= 1e3) return (n/1e3).toFixed(1)+'K';
         return n.toString();
     };
+    const isReviewRestricted = () => false;
 
     // ── Skeleton ─────────────────────────────────────────────────────────────
     function showSkeleton() {
@@ -58,18 +61,19 @@ const StockDashboard = (() => {
         </div>`;
     }
 
-    // ── Market hours helper (IST 9:15 – 15:30, Mon–Fri) ─────────────────────
+    // ── Regular market hours helper (exchange-local timezone) ─────────────────────
     function isMarketOpen() {
         try {
             const now = new Date();
             // Convert to IST (UTC+5:30)
-            const ist = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+            const indian = _symbol.endsWith('.NS') || _symbol.endsWith('.BO');
+            const ist = new Date(now.toLocaleString('en-US', { timeZone: indian?'Asia/Kolkata':'America/New_York' }));
             const day = ist.getDay(); // 0=Sun, 6=Sat
             if (day === 0 || day === 6) return false;
             const mins = ist.getHours() * 60 + ist.getMinutes();
-            return mins >= 555 && mins <= 930; // 9:15 = 555, 15:30 = 930
+            return indian ? mins >= 555 && mins <= 930 : mins >= 570 && mins <= 960; // 9:15 = 555, 15:30 = 930
         } catch (e) {
-            return true; // fallback: assume open
+            return false; // unknown market state
         }
     }
 
@@ -112,6 +116,7 @@ const StockDashboard = (() => {
                 renderDashboard(data);
                 loadChart(_symbol, _currentTF);
                 loadNews(_symbol);
+                if (typeof StockInsights !== 'undefined') StockInsights.mount(_symbol);
                 // Only auto-refresh during market hours — saves Yahoo API calls
                 if (isMarketOpen()) {
                     _refreshTimer = setInterval(refreshQuote, 120000); // 2 min (was 30 s)
@@ -129,24 +134,33 @@ const StockDashboard = (() => {
         const up  = (quote.change || 0) >= 0;
         const sym = (profile.currency === 'USD') ? '$' : '₹';
 
-        // Build company initials for avatar fallback
-        const companyInitials = (profile.name || _symbol)
-            .split(' ').filter(w => w.length > 0).slice(0, 2)
-            .map(w => w[0]).join('').toUpperCase();
-
-        // Logo: Google Favicon API is reliable. Show initials avatar if image fails.
-        const logoId = 'si-logo-' + Date.now();
-        const fbId   = 'si-fb-'   + Date.now();
-        const logoHtml = profile.logo
-            ? `<img src="${profile.logo}" class="si-logo" id="${logoId}"
-                    onerror="
-                        var el=document.getElementById('${logoId}');
-                        var fb=document.getElementById('${fbId}');
-                        if(el) el.style.display='none';
-                        if(fb) fb.style.display='flex';
-                    ">
-               <div class="si-logo-fb" id="${fbId}" style="display:none;">${companyInitials}</div>`
-            : `<div class="si-logo-fb">${companyInitials}</div>`;
+        // Logo: Multi-tier fallback (Parqet -> Google Favicon 128px -> DuckDuckGo -> Pastel Gradient Avatar)
+        const logoHtml = (typeof window.renderStockSquircle === 'function')
+            ? window.renderStockSquircle(_symbol, profile.name, '54px', '14px')
+            : (function() {
+                const s = (_symbol || '').toUpperCase().trim();
+                const isUS = ['AAPL','MSFT','GOOGL','GOOG','AMZN','META','TSLA','NVDA','NFLX','AMD','INTC','JPM','BAC','V','MA','WMT','DIS'].includes(s);
+                const parqetSym = s.endsWith('.NS') ? s : (isUS ? s : s + '.NS');
+                const src = profile.logo || `https://assets.parqet.com/logos/symbol/${parqetSym}`;
+                const dom = profile.logo_domain || '';
+                const gFavicon = dom ? `https://www.google.com/s2/favicons?domain=${dom}&sz=128` : '';
+                const ddgFavicon = dom ? `https://icons.duckduckgo.com/ip3/${dom}.ico` : '';
+                const uid = 'si_lg_' + Date.now();
+                const fbId = 'si_fb_' + Date.now();
+                const init = (profile.name || s).split(' ').filter(Boolean).slice(0, 2).map(w=>w[0]).join('').toUpperCase() || s.slice(0,2);
+                let err = ``;
+                if (gFavicon) {
+                    err = `this.onerror=function(){this.onerror=function(){this.style.display='none';document.getElementById('${fbId}').style.display='flex';};this.src='${ddgFavicon}';};this.src='${gFavicon}';`;
+                } else {
+                    err = `this.style.display='none';document.getElementById('${fbId}').style.display='flex';`;
+                }
+                return `<div style="position:relative;width:54px;height:54px;flex-shrink:0;">
+                    <img src="${src}" id="${uid}" class="si-logo"
+                         style="width:54px;height:54px;border-radius:14px;object-fit:contain;background:#fff;border:1px solid #e2e8f0;padding:5px;display:block;box-shadow:0 2px 8px rgba(0,0,0,0.06);"
+                         onerror="${err}">
+                    <div class="si-logo-fb" id="${fbId}" style="display:none;width:54px;height:54px;border-radius:14px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-weight:800;font-size:20px;align-items:center;justify-content:center;">${init}</div>
+                </div>`;
+            })();
 
         d.innerHTML = `
 
@@ -169,13 +183,13 @@ const StockDashboard = (() => {
                 </div>
                 <div class="si-live-dot">
                     ${isMarketOpen()
-                        ? `<span class="si-dot"></span> LIVE · auto-refresh 2 min`
+                        ? `<span class="si-dot"></span> Regular trading hours · quotes may be delayed`
                         : `<span style="color:#94a3b8;font-size:10px;">⏸ Market closed · data as of last session</span>`
                     }
                 </div>
                 <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
                     <button class="si-portfolio-btn"
-                        onclick="if(typeof FinTracker !== 'undefined') FinTracker.openAddHolding('${_symbol.replace('.NS','').replace('.BO','')}')">
+                        onclick="if(typeof FinTracker !== 'undefined') { FinTracker.openAddHolding('${_symbol.replace('.NS','').replace('.BO','')}'); }">
                         <i class="fas fa-plus"></i> Add to Portfolio
                     </button>
                 </div>
@@ -214,7 +228,7 @@ const StockDashboard = (() => {
         <!-- ── KEY METRICS ── -->
         <div class="si-section-title"><i class="fas fa-chart-pie"></i> Key Metrics</div>
         <div class="si-metrics-grid">
-            ${mc('Market Cap',   fmtLarge(metrics.market_cap || profile.market_cap))}
+            ${mc('Market Cap',   fmtLarge(metrics.market_cap || profile.market_cap, quote.currency || profile.currency))}
             ${mc('PE Ratio',     fmt(metrics.pe_ratio))}
             ${mc('52W High',     metrics.week52_high != null ? sym+fmt(metrics.week52_high) : '—', 'si-up')}
             ${mc('52W Low',      metrics.week52_low  != null ? sym+fmt(metrics.week52_low)  : '—', 'si-down')}
@@ -224,6 +238,9 @@ const StockDashboard = (() => {
             ${mc('Price/Book',   fmt(metrics.price_to_book))}
             ${mc('Debt/Equity',  fmt(metrics.debt_equity))}
         </div>
+
+        <!-- ── EXPLAINABLE STOCK INSIGHTS ── -->
+        <div id="si-insights-container" style="margin-bottom:14px;"></div>
 
         <!-- ── ANALYST + NEWS ── -->
         <div class="si-two-col">
@@ -264,8 +281,9 @@ const StockDashboard = (() => {
     }
 
     function mc(label, val, cls='') {
+        const help = {'Market Cap':'Total market value of outstanding shares.', 'PE Ratio':'Share price relative to trailing earnings per share; negative earnings can make comparison unhelpful.', '52W High':'Highest quoted price during the past 52 weeks.', '52W Low':'Lowest quoted price during the past 52 weeks.', 'ROE':'Net income relative to shareholder equity; high leverage can increase it.', 'Beta':'Historical sensitivity to a market benchmark; it is not a guaranteed future risk measure.', 'Div Yield':'Annual dividends relative to share price; dividends can change.', 'Price/Book':'Share price relative to book value per share.', 'Debt/Equity':'Debt relative to shareholder equity; interpretation depends on the sector.'};
         return `<div class="si-metric-card">
-            <div class="si-metric-label">${label}</div>
+            <details><summary class="si-metric-label">${label} ⓘ</summary><p class="sii-small">${help[label]||'Provider-reported financial measure; compare its reporting period and sector context.'}</p></details>
             <div class="si-metric-val ${cls}">${val == null ? '—' : val}</div>
         </div>`;
     }
@@ -401,11 +419,20 @@ const StockDashboard = (() => {
 
         try {
             const intraday = tf === '1D' || tf === '1W';
-            candles.sort((a,b) => a.time - b.time);
+            // Filter out invalid/null/NaN candles
+            const valid = (candles || []).filter(c => {
+                if (!c || typeof c.time !== 'number') return false;
+                const cl = Number(c.close);
+                const op = Number(c.open);
+                if (isNaN(cl) || !isFinite(cl)) return false;
+                if (_chartType === 'candle' && (isNaN(op) || !isFinite(op))) return false;
+                return true;
+            });
+            valid.sort((a,b) => a.time - b.time);
 
             // De-duplicate by time key
             const seen = new Set();
-            const unique = candles.filter(c => {
+            const unique = valid.filter(c => {
                 const k = intraday ? c.time : new Date(c.time*1000).toISOString().slice(0,10);
                 return seen.has(k) ? false : seen.add(k);
             });
@@ -487,7 +514,7 @@ const StockDashboard = (() => {
             // ── Volume histogram (always shown at the bottom) ────────────────
             const vData = unique.map(c => ({
                 time: toTime(c),
-                value: c.volume,
+                value: (typeof c.volume === 'number' && !isNaN(c.volume) && isFinite(c.volume)) ? c.volume : 0,
                 color: c.close >= c.open ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'
             }));
             const vs = _chart.addHistogramSeries({
@@ -519,11 +546,12 @@ const StockDashboard = (() => {
         fetch(`/si/news?symbol=${encodeURIComponent(symbol)}`)
             .then(r => r.json())
             .then(data => {
-                const articles = data.articles || [];
+                if (symbol !== _symbol || c !== $id('si-news-container')) return;
+                const articles = (data.articles || []).filter(a => /^https?:\/\//i.test(a.url || ''));
                 if (!articles.length) {
                     c.innerHTML = `<div class="si-news-empty">
                         <i class="fas fa-newspaper" style="font-size:1.5rem;color:#cbd5e1;margin-bottom:8px;"></i>
-                        <p>No recent news found for ${symbol}.</p>
+                        <p>${data.status === 'unavailable' || data.error ? 'News providers are temporarily unavailable. Please retry shortly.' : `No articles found in the past seven days for ${newsEsc(symbol)}.`}</p>
                     </div>`;
                     return;
                 }
@@ -532,14 +560,15 @@ const StockDashboard = (() => {
                         ? new Date(a.datetime * 1000).toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'})
                         : '';
                     return `
-                    <a href="${a.url || '#'}" target="_blank" rel="noopener" class="si-news-item">
-                        <div class="si-news-title">${a.headline || 'Untitled'}</div>
+                    <a href="${newsEsc(a.url)}" target="_blank" rel="noopener noreferrer" class="si-news-item">
+                        <div class="si-news-title">${newsEsc(a.headline || 'Untitled')}</div>
                         <div class="si-news-meta">
-                            ${a.source ? `<span class="si-news-source">${a.source}</span>` : ''}
+                            ${a.source ? `<span class="si-news-source">${newsEsc(a.source)}</span>` : ''}
                             ${dateStr ? `<span>${dateStr}</span>` : ''}
                         </div>
                     </a>`;
                 }).join('');
+                c.insertAdjacentHTML('beforeend', `<p class="sii-small">Company-news search · ${newsEsc(data.provider || 'Yahoo Finance')} · updated ${newsEsc(data.fetched_at ? new Date(data.fetched_at).toLocaleString('en-IN') : 'recently')}. Headlines are context, not verified causes of price movements.</p>`);
             })
             .catch(err => {
                 console.error('News fetch error:', err);
@@ -637,15 +666,23 @@ const StockDashboard = (() => {
                 drop.innerHTML = `<div style="padding:10px 14px;font-size:12px;color:#64748b;font-style:italic;">
                     Press Enter to search "<strong>${val.toUpperCase()}</strong>"</div>`;
             } else {
-                drop.innerHTML = scored.map(({s}) => `
+                drop.innerHTML = scored.map(({s}) => {
+                    const logoHtml = (typeof window.renderStockSquircle === 'function')
+                        ? window.renderStockSquircle(s.v, s.l, '28px', '7px')
+                        : '';
+                    return `
                     <div class="fh-drop-item" data-ticker="${s.v}" style="
                         padding:9px 14px;cursor:pointer;display:flex;align-items:center;
-                        justify-content:space-between;gap:8px;border-bottom:1px solid #f1f5f9;
+                        gap:10px;border-bottom:1px solid #f1f5f9;
                         transition:background 0.12s;font-family:inherit;">
-                        <span style="font-size:12.5px;font-weight:600;color:#0f172a;">${s.l}</span>
-                        <span style="font-size:11px;font-weight:700;color:#2563eb;background:#eff6ff;
-                            padding:2px 8px;border-radius:20px;white-space:nowrap;">${s.v}</span>
-                    </div>`).join('');
+                        ${logoHtml}
+                        <div style="flex:1;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                            <span style="font-size:12.5px;font-weight:600;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.l}</span>
+                            <span style="font-size:11px;font-weight:700;color:#2563eb;background:#eff6ff;
+                                padding:2px 8px;border-radius:20px;white-space:nowrap;">${s.v}</span>
+                        </div>
+                    </div>`;
+                }).join('');
             }
             drop.style.display = 'block';
         }
@@ -698,5 +735,5 @@ const StockDashboard = (() => {
         });
     });
 
-    return { load, changeTimeframe, setChartType, stopAutoRefresh };
+    return { load, changeTimeframe, setChartType, stopAutoRefresh, refresh: () => { if (_symbol) load(_symbol); } };
 })();

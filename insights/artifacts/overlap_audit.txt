@@ -1,0 +1,10 @@
+LOCAL OVERLAP / ORIGINALITY AUDIT
+Final report: /Users/bilal/Downloads/projects/finassist/Final_FinAssist_Project_Report.docx
+Final report word count (normalised): 11758
+supplied reference report: words=11018, common_5grams=48, final_5gram_overlap=0.4218%, source_5gram_overlap=0.4588%
+supplied template: words=1796, common_5grams=46, final_5gram_overlap=0.4042%, source_5gram_overlap=2.8448%
+project artifact insights/LITERATURE.md: words=309, common_5grams=19, final_5gram_overlap=0.1670%
+project artifact insights/METHODOLOGY.md: words=1097, common_5grams=18, final_5gram_overlap=0.1582%
+project artifact insights/README.md: words=1087, common_5grams=41, final_5gram_overlap=0.3603%
+project artifact insights/RESULTS.md: words=233, common_5grams=96, final_5gram_overlap=0.8436%
+Interpretation: exact n-gram overlap is a local screening signal, not an institutional similarity score. Technical names, citations, headings, formulas and project-specific terms create expected overlap. The candidate must run the institution-approved similarity checker and review every flagged passage before signing.

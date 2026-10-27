@@ -1,0 +1,2 @@
+# Production analytics use the same locked dependencies as the hosted app.
+-r requirements.txt

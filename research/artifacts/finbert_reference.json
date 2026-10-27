@@ -1,0 +1,6 @@
+{
+  "model": "ProsusAI/finbert",
+  "revision": "0bc2ac10dda6929bcb1f77ccc43c7ec5c424f031",
+  "max_length": 96,
+  "frozen": true
+}

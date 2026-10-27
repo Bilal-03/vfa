@@ -1,0 +1,39 @@
+[
+  {
+    "kind": "historical",
+    "http_status": 200,
+    "grounded_explanation_present": true
+  },
+  {
+    "kind": "movement",
+    "http_status": 200,
+    "grounded_explanation_present": true
+  },
+  {
+    "kind": "portfolio-fit",
+    "http_status": 200,
+    "grounded_explanation_present": true
+  },
+  {
+    "flow": "mobile historical inputs",
+    "amount": 5000,
+    "months": 6,
+    "observed_median_display": "$5,340",
+    "verified_in_browser": true
+  },
+  {
+    "flow": "mobile EMI reference",
+    "principal": 1000000,
+    "annual_rate": 8.5,
+    "years": 10,
+    "observed_monthly_emi": 12398.57,
+    "verified_in_browser": true
+  },
+  {
+    "flow": "desktop TCS portfolio fit",
+    "synthetic_holdings": true,
+    "mixed_currency_exclusions_visible": true,
+    "historical_cutoff_label_visible": true,
+    "verified_in_browser": true
+  }
+]

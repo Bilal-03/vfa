@@ -1,0 +1,146 @@
+[
+  {
+    "symbol": "TCS.NS",
+    "kind": "movement",
+    "status": "ready",
+    "http_status": 200,
+    "date": "2026-10-09",
+    "mode": "historical_demo"
+  },
+  {
+    "symbol": "TCS.NS",
+    "kind": "historical",
+    "status": "ready",
+    "http_status": 200,
+    "date": "2026-10-09",
+    "mode": "historical_demo"
+  },
+  {
+    "symbol": "TCS.NS",
+    "kind": "portfolio-fit",
+    "status": "ready",
+    "http_status": 200,
+    "date": "2026-10-09",
+    "mode": "historical_demo"
+  },
+  {
+    "symbol": "INFY.NS",
+    "kind": "movement",
+    "status": "ready",
+    "http_status": 200,
+    "date": "2026-10-09",
+    "mode": "historical_demo"
+  },
+  {
+    "symbol": "INFY.NS",
+    "kind": "historical",
+    "status": "ready",
+    "http_status": 200,
+    "date": "2026-10-09",
+    "mode": "historical_demo"
+  },
+  {
+    "symbol": "INFY.NS",
+    "kind": "portfolio-fit",
+    "status": "ready",
+    "http_status": 200,
+    "date": "2026-10-09",
+    "mode": "historical_demo"
+  },
+  {
+    "symbol": "SBIN.NS",
+    "kind": "movement",
+    "status": "ready",
+    "http_status": 200,
+    "date": "2026-10-09",
+    "mode": "historical_demo"
+  },
+  {
+    "symbol": "SBIN.NS",
+    "kind": "historical",
+    "status": "ready",
+    "http_status": 200,
+    "date": "2026-10-09",
+    "mode": "historical_demo"
+  },
+  {
+    "symbol": "SBIN.NS",
+    "kind": "portfolio-fit",
+    "status": "ready",
+    "http_status": 200,
+    "date": "2026-10-09",
+    "mode": "historical_demo"
+  },
+  {
+    "symbol": "AAPL",
+    "kind": "movement",
+    "status": "ready",
+    "http_status": 200,
+    "date": "2026-10-09",
+    "mode": "historical_demo"
+  },
+  {
+    "symbol": "AAPL",
+    "kind": "historical",
+    "status": "ready",
+    "http_status": 200,
+    "date": "2026-10-09",
+    "mode": "historical_demo"
+  },
+  {
+    "symbol": "AAPL",
+    "kind": "portfolio-fit",
+    "status": "ready",
+    "http_status": 200,
+    "date": "2026-10-09",
+    "mode": "historical_demo"
+  },
+  {
+    "symbol": "MSFT",
+    "kind": "movement",
+    "status": "ready",
+    "http_status": 200,
+    "date": "2026-10-09",
+    "mode": "historical_demo"
+  },
+  {
+    "symbol": "MSFT",
+    "kind": "historical",
+    "status": "ready",
+    "http_status": 200,
+    "date": "2026-10-09",
+    "mode": "historical_demo"
+  },
+  {
+    "symbol": "MSFT",
+    "kind": "portfolio-fit",
+    "status": "ready",
+    "http_status": 200,
+    "date": "2026-10-09",
+    "mode": "historical_demo"
+  },
+  {
+    "symbol": "NVDA",
+    "kind": "movement",
+    "status": "ready",
+    "http_status": 200,
+    "date": "2026-10-09",
+    "mode": "historical_demo"
+  },
+  {
+    "symbol": "NVDA",
+    "kind": "historical",
+    "status": "ready",
+    "http_status": 200,
+    "date": "2026-10-09",
+    "mode": "historical_demo"
+  },
+  {
+    "symbol": "NVDA",
+    "kind": "portfolio-fit",
+    "status": "ready",
+    "http_status": 200,
+    "date": "2026-10-09",
+    "mode": "historical_demo"
+  }
+]

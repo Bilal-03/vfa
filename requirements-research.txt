@@ -1,0 +1,10 @@
+torch==2.2.2
+numpy<2
+scikit-learn
+pandas<3
+yfinance
+requests
+transformers==4.44.2
+pytest
+
+pandas_market_calendars>=4.4,<6

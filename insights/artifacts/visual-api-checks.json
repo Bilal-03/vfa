@@ -1,0 +1,42 @@
+{
+  "movement": {
+    "symbol": "INFY.NS",
+    "status": "ready",
+    "observation_date": "2026-10-09",
+    "stock_return": 0.026479462802469822,
+    "benchmark_return": 0.012983583306640734,
+    "abnormal_return": 0.016503514822340158,
+    "volume_multiple": 1.5370242313397897,
+    "robust_score": 1.0999135664309838,
+    "explanation_ok": true
+  },
+  "historical": {
+    "symbol": "INFY.NS",
+    "status": "ready",
+    "observation_date": "2026-10-09",
+    "median_value": 9928.383875627453,
+    "p10_value": 8225.172371835126,
+    "p90_value": 11477.047749952791,
+    "losing_fraction": 0.5230769230769231,
+    "window_count": 1170,
+    "explanation_ok": true
+  },
+  "interface_checks": {
+    "desktop_viewport": [
+      1280,
+      900
+    ],
+    "mobile_viewport": [
+      390,
+      844
+    ],
+    "mobile_card_width": 366,
+    "mobile_card_horizontal_overflow": false,
+    "portfolio_movement_historical_visual_overflow": false,
+    "technical_details_expand": true,
+    "keyboard_arrow_right_selects_next_tab": true,
+    "backend_tests_passed": 48,
+    "visual_renderer_tests_passed": 6,
+    "calculation_formulas_changed": false
+  }
+}
